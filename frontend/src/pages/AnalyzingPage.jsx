@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { ScanSearch, Brain, FileCheck, Lightbulb, Shield, Loader } from 'lucide-react'
 import Layout from '../components/Layout'
 
 const steps = [
-  '이미지 전처리 및 개인정보 마스킹',
-  '위험 요소 감지 중',
-  '산업안전보건규칙 대조 중',
-  '예방 조치 생성 중',
-  '위험성 평가 보고서 작성 중',
+  { label: '이미지 전처리 및 개인정보 마스킹', icon: ScanSearch },
+  { label: '위험 요소 감지 중', icon: Brain },
+  { label: '산업안전보건규칙 대조 중', icon: FileCheck },
+  { label: '예방 조치 생성 중', icon: Lightbulb },
+  { label: '위험성 평가 보고서 작성 중', icon: Shield },
 ]
 
 export default function AnalyzingPage() {
@@ -28,21 +29,29 @@ export default function AnalyzingPage() {
     }
   }, [navigate])
 
+  const { label, icon: Icon } = steps[currentStep]
+
   return (
     <Layout hideNav>
       <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
-        {/* Spinner */}
-        <div className="relative w-24 h-24 mb-8">
-          <div className="absolute inset-0 rounded-full border-4 border-slate-100" />
-          <div className="absolute inset-0 rounded-full border-4 border-t-orange-500 animate-spin" />
-          <span className="absolute inset-0 flex items-center justify-center text-3xl">🦺</span>
+
+        {/* 상단: 아이콘 */}
+        <div className="relative flex items-center justify-center mb-6">
+          <div className="absolute w-44 h-44 rounded-full border-2 border-blue-200" />
+          <div className="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center">
+            <Icon size={52} className="text-blue-500" strokeWidth={1.5} />
+          </div>
         </div>
 
-        <h2 className="text-xl font-bold text-slate-900 mb-2">AI가 현장을 분석 중입니다</h2>
-        <p className="text-sm text-slate-500 mb-10">잠시만 기다려 주세요</p>
+        {/* 현재 단계 텍스트 */}
+        <div className="flex items-center justify-center gap-2 mb-1.5">
+          <Loader size={15} className="text-slate-400 animate-spin flex-shrink-0" />
+          <p className="text-base font-semibold text-slate-800">{label}</p>
+        </div>
+        <p className="text-sm text-slate-400 mb-8">AI가 사진을 분석하고 있습니다</p>
 
-        {/* Steps progress */}
-        <div className="w-full max-w-xs flex flex-col gap-3.5">
+        {/* 하단: 순차 체크 리스트 */}
+        <div className="w-full max-w-xs flex flex-col gap-3 mb-8">
           {steps.map((step, i) => (
             <div
               key={i}
@@ -55,22 +64,33 @@ export default function AnalyzingPage() {
                   i < currentStep
                     ? 'bg-green-500 text-white'
                     : i === currentStep
-                    ? 'bg-orange-500 text-white'
+                    ? 'bg-blue-500 text-white'
                     : 'bg-slate-200 text-slate-400'
                 }`}
               >
                 {i < currentStep ? '✓' : i + 1}
               </div>
-              <span
-                className={`text-sm leading-tight ${
-                  i <= currentStep ? 'text-slate-700 font-medium' : 'text-slate-400'
-                }`}
-              >
-                {step}
+              <span className={`text-sm leading-tight ${
+                i <= currentStep ? 'text-slate-700 font-medium' : 'text-slate-400'
+              }`}>
+                {step.label}
               </span>
             </div>
           ))}
         </div>
+
+        {/* 점 인디케이터 */}
+        <div className="flex items-center gap-2">
+          {steps.map((_, i) => (
+            <div
+              key={i}
+              className={`rounded-full transition-all duration-500 ${
+                i <= currentStep ? 'w-2.5 h-2.5 bg-blue-500' : 'w-2 h-2 bg-slate-300'
+              }`}
+            />
+          ))}
+        </div>
+
       </div>
     </Layout>
   )
