@@ -36,7 +36,7 @@ export default function HomePage() {
     const file = e.target.files?.[0]
     if (!file) return
     const previewUrl = URL.createObjectURL(file)
-    navigate('/preview', { state: { previewUrl, fileName: file.name } })
+    navigate('/preview', { state: { previewUrl, file } })
   }
 
   return (

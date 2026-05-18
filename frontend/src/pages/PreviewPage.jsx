@@ -5,7 +5,7 @@ import Layout from '../components/Layout'
 export default function PreviewPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { previewUrl } = location.state ?? {}
+  const { previewUrl, file } = location.state ?? {}
 
   if (!previewUrl) {
     navigate('/')
@@ -13,8 +13,7 @@ export default function PreviewPage() {
   }
 
   const handleAnalyze = () => {
-    // TODO: FormData로 이미지 업로드 → 분석 ID 받아서 state로 전달
-    navigate('/analyzing', { state: { previewUrl } })
+    navigate('/analyzing', { state: { previewUrl, file } })
   }
 
   return (

@@ -1,4 +1,5 @@
-from fastapi import FastAPI, CORSMiddleware
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.api.analyze import router as analysis_router
 
 

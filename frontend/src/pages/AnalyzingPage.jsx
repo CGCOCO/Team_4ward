@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ScanSearch, Brain, FileCheck, Lightbulb, Shield, Loader } from 'lucide-react'
+import axios from 'axios'
 import Layout from '../components/Layout'
 
 const steps = [
@@ -11,23 +12,40 @@ const steps = [
   { label: '위험성 평가 보고서 작성 중', icon: Shield },
 ]
 
+const MIN_ANIM_MS = steps.length * 1200 + 800
+
 export default function AnalyzingPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { previewUrl } = location.state ?? {}
+  const { previewUrl, file } = location.state ?? {}
   const [currentStep, setCurrentStep] = useState(0)
 
   useEffect(() => {
-    const timers = steps.map((_, i) =>
+    const stepTimers = steps.map((_, i) =>
       setTimeout(() => setCurrentStep(i), i * 1200)
     )
-    // TODO: 실제 API 응답 받으면 navigate('/result', { state: { result, previewUrl } })
-    const done = setTimeout(() => navigate('/result', { state: { previewUrl } }), steps.length * 1200 + 800)
-    return () => {
-      timers.forEach(clearTimeout)
-      clearTimeout(done)
-    }
-  }, [navigate])
+
+    const apiCall = file
+      ? axios.post('http://localhost:8001/api/v1/analyze', (() => {
+          const fd = new FormData()
+          fd.append('file', file)
+          return fd
+        })())
+      : Promise.resolve({ data: null })
+
+    const animDone = new Promise((res) => setTimeout(res, MIN_ANIM_MS))
+
+    Promise.all([apiCall, animDone])
+      .then(([response]) => {
+        navigate('/result', { state: { previewUrl, result: response.data } })
+      })
+      .catch(() => {
+        // API 실패 시 mock 데이터로 결과 페이지 이동
+        navigate('/result', { state: { previewUrl, result: null } })
+      })
+
+    return () => stepTimers.forEach(clearTimeout)
+  }, [])
 
   const { label, icon: Icon } = steps[currentStep]
 
