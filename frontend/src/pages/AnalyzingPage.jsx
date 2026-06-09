@@ -26,7 +26,7 @@ export default function AnalyzingPage() {
     )
 
     const apiCall = file
-      ? axios.post('http://localhost:8001/api/v1/analyze', (() => {
+      ? axios.post('http://localhost:8000/api/v1/analyze', (() => {
           const fd = new FormData()
           fd.append('file', file)
           return fd

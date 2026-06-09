@@ -1,12 +1,13 @@
-# app/services/analyze_service.py
+from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
 
 from app.ai.dummy_analyzer import dummy_analyze_risk
-from app.privacy.image_masker import dummy_blur_image
+from app.privacy.image_masker import blur_sensitive_regions
 
 
 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
+DEBUG_BLURRED_IMAGE_PATH = Path("debug_blurred_latest.jpg")
 
 
 async def analyze_image_service(image: UploadFile) -> dict:
@@ -39,7 +40,20 @@ async def analyze_image_service(image: UploadFile) -> dict:
         )
 
     # 5. 민감한 정보 블러 처리
-    masked_image_bytes = await dummy_blur_image(image_bytes)
+    try:
+        masked_image_bytes = await blur_sensitive_regions(image_bytes)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=str(exc),
+        ) from exc
+
+    DEBUG_BLURRED_IMAGE_PATH.write_bytes(masked_image_bytes)
 
     # 6. AI 위험 분석 실행
     result = await dummy_analyze_risk(masked_image_bytes)
