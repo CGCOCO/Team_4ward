@@ -1,13 +1,16 @@
-import json
 import chromadb
 import vertexai
-
+import json
+import re
+from pathlib import Path
 from google import genai
 from google.genai.types import HttpOptions
 from google.genai import types
 
-from vertexai.language_models import TextEmbeddingModel
-
+from rank_bm25 import BM25Okapi
+from kiwipiepy import Kiwi
+import builtins
+from datetime import datetime
 
 # =====================================================
 # CONFIG
@@ -16,13 +19,18 @@ from vertexai.language_models import TextEmbeddingModel
 PROJECT_ID = "kun-kgp-mytnt831"
 LOCATION = "us-central1"
 
+ACCIDENT_COLLECTION = "accident_case_full"
+LAW_COLLECTION = "kosha_rag_v2"
+
+BM25_TOP_K = 10
+FINAL_TOP_K = 5
+
 CHROMA_PATH = "./chroma_db"
 
-IMAGE_PATH = "image/추락.jpg"
-
-
+kiwi = Kiwi()
+_original_print = builtins.print
 # =====================================================
-# Vertex AI Init
+# Vertex AI
 # =====================================================
 
 vertexai.init(
@@ -32,26 +40,17 @@ vertexai.init(
 
 
 # =====================================================
-# Embedding Model
-# =====================================================
-
-embedding_model = TextEmbeddingModel.from_pretrained(
-    "text-embedding-005"
-)
-
-
-# =====================================================
-# Gemini Vision Client
+# Gemini Vision
 # =====================================================
 
 vision_client = genai.Client(
     vertexai=True,
     project=PROJECT_ID,
     location="global",
-    http_options=HttpOptions(api_version="v1")
+    http_options=HttpOptions(
+        api_version="v1"
+    )
 )
-
-
 # =====================================================
 # Gemini Multimodal Client
 # =====================================================
@@ -63,36 +62,35 @@ multimodal_client = genai.Client(
 )
 
 
-# =====================================================
-# ChromaDB
-# =====================================================
 
-client = chromadb.PersistentClient(
-    path=CHROMA_PATH
-)
+STOPWORDS = {
+    "제",
+    "조",
+    "항",
+    "호",
+    "및",
+    "또는",
+    "등"
+}
 
-# 법령 DB
-kosha_collection = client.get_collection(
-    "kosha_rag_v2"
-)
+def tokenize(text):
+    return [
+        token.form
+        for token
+        in kiwi.tokenize(text)
+        if (
+            len(token.form) > 1
+            and token.form not in STOPWORDS
+        )
+    ]
+def print(*args, **kwargs):
 
-# Full Case DB
-accident_collection = client.get_collection(
-    "accident_case_full"
-)
+    text = " ".join(
+        str(arg)
+        for arg in args
+    )
 
-
-# =====================================================
-# Embedding
-# =====================================================
-
-def get_embedding(text):
-
-    return embedding_model.get_embeddings(
-        [text]
-    )[0].values
-
-
+    log_file.write(text + "\n")
 # =====================================================
 # Vision Analysis
 # =====================================================
@@ -100,6 +98,7 @@ def get_embedding(text):
 def analyze_image(image_path):
 
     with open(image_path, "rb") as f:
+
         image_bytes = f.read()
 
     prompt = """
@@ -124,7 +123,7 @@ def analyze_image(image_path):
 
 - hazard_keywords
   - 위험 상황을 직접 설명하는 keyword 추출
-  - 일반적인 안전관리 용어 제외 
+  - 일반적인 안전관리 용어 제외
   - 5~10개 생성
 
 - JSON 외 텍스트 출력 금지
@@ -132,41 +131,91 @@ def analyze_image(image_path):
 
     response = vision_client.models.generate_content(
 
-        model="gemini-3.1-flash-lite",
+        model="gemini-3.5-flash",
 
         contents=[
+
             prompt,
 
             types.Part.from_bytes(
                 data=image_bytes,
                 mime_type="image/jpeg"
-            ),
+            )
         ],
 
         config=types.GenerateContentConfig(
-            temperature=0.2,
+            temperature=0.0,
             response_mime_type="application/json"
-        ),
+        )
     )
 
-    return json.loads(response.text)
+    return json.loads(
+        response.text
+    )
 
 
 # =====================================================
-# Query Build
+# Chroma
 # =====================================================
 
-def build_query(vision_output):
+client = chromadb.PersistentClient(
+    path=CHROMA_PATH
+)
 
-    descriptions = "\n".join(
-        vision_output["hazard_description"]
+accident_collection = client.get_collection(
+    ACCIDENT_COLLECTION
+)
+
+law_collection = client.get_collection(
+    LAW_COLLECTION
+)
+
+
+# =====================================================
+# IMAGE
+# =====================================================
+
+IMAGE_PATH = "image/전도.jpg"
+image_name = Path(IMAGE_PATH).stem
+
+Path("results").mkdir(exist_ok=True)
+
+time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+LOG_FILE = f"results/final/{image_name}_{time_str}.txt"
+
+log_file = open(
+    LOG_FILE,
+    "w",
+    encoding="utf-8"
+)
+
+vision_output = analyze_image(
+    IMAGE_PATH
+)
+
+print("\n")
+print("=" * 100)
+print("VISION OUTPUT")
+print("=" * 100)
+
+print(
+    json.dumps(
+        vision_output,
+        ensure_ascii=False,
+        indent=2
     )
+)
 
-    keywords = ", ".join(
-        vision_output["hazard_keywords"]
-    )
+descriptions = "\n".join(
+    vision_output["hazard_description"]
+)
 
-    return f"""
+keywords = ", ".join(
+    vision_output["hazard_keywords"]
+)
+
+query = f"""
 hazard_description:
 {descriptions}
 
@@ -174,101 +223,231 @@ hazard_keywords:
 {keywords}
 """
 
+print("\n")
+print("=" * 100)
+print("QUERY")
+print("=" * 100)
+
+print(query)
+
+
+# bm25가 어떤 토큰을 사용하는지 확인하기
+print("\n")
+print("=" * 100)
+print("BM25 TOKENS")
+print("=" * 100)
+
+print(
+    tokenize(query)
+)
+
+print("\n")
+print("=" * 100)
+print("TOKEN COUNT")
+print("=" * 100)
+
+print(
+    len(tokenize(query))
+)
+# =====================================================
+# VECTOR SEARCH
+# =====================================================
+
+
 
 # =====================================================
-# Accident Retrieval
+# BM25 BUILD
 # =====================================================
 
-def retrieve_accident_cases(
-    query,
-    top_k=10
-):
+print("Loading BM25 corpus...")
 
-    query_embedding = get_embedding(query)
 
-    return accident_collection.query(
+# ---------- Accident ----------
 
-        query_embeddings=[
-            query_embedding
-        ],
+accident_data = accident_collection.get(
 
-        n_results=top_k
+    include=[
+        "documents",
+        "metadatas"
+    ]
+)
+
+accident_docs = accident_data["documents"]
+accident_meta = accident_data["metadatas"]
+
+accident_tokens = [
+
+    tokenize(doc)
+
+    for doc in accident_docs
+
+]
+
+accident_bm25 = BM25Okapi(
+    accident_tokens
+)
+
+
+# ---------- Law ----------
+
+law_data = law_collection.get(
+
+    where={
+        "source": "law"
+    },
+
+    include=[
+        "documents",
+        "metadatas"
+    ]
+)
+
+law_docs = law_data["documents"]
+law_meta = law_data["metadatas"]
+
+law_tokens = [
+
+    tokenize(doc)
+
+    for doc in law_docs
+
+]
+
+law_bm25 = BM25Okapi(
+    law_tokens
+)
+
+
+# =====================================================
+# BM25 SEARCH
+# =====================================================
+
+def bm25_search_accident():
+
+    scores = accident_bm25.get_scores(
+        tokenize(query)
     )
 
+    ranked = sorted(
 
-# =====================================================
-# Law Retrieval
-# =====================================================
+        zip(
+            scores,
+            accident_docs,
+            accident_meta
+        ),
 
-def retrieve_laws(
-    query,
-    top_k=2
-):
+        key=lambda x: x[0],
 
-    query_embedding = get_embedding(query)
-
-    return kosha_collection.query(
-
-        query_embeddings=[
-            query_embedding
-        ],
-
-        n_results=top_k,
-
-        where={
-            "source": "law"
-        }
+        reverse=True
     )
 
-# =====================================================
-# Accident Reranking
-# =====================================================
+    output = []
 
+    for score, doc, meta in ranked[:BM25_TOP_K]:
+
+        output.append({
+
+            "id":
+                meta["filename"],
+
+            "document":
+                doc,
+
+            "metadata":
+                meta
+
+        })
+
+    return output
+
+
+def bm25_search_law():
+
+    scores = law_bm25.get_scores(
+        tokenize(query)
+    )
+
+    ranked = sorted(
+
+        zip(
+            scores,
+            law_docs,
+            law_meta
+        ),
+
+        key=lambda x: x[0],
+
+        reverse=True
+    )
+
+    output = []
+
+    for score, doc, meta in ranked[:BM25_TOP_K]:
+
+        output.append({
+
+            "id":
+                meta["article"],
+
+            "document":
+                doc,
+
+            "metadata":
+                meta
+
+        })
+
+    return output
+
+
+
+# =====================================================
+# GEMINI RERANK
+# =====================================================
 def rerank_accident_cases(
-
+    image_path,
     vision_output,
-
-    accident_candidates,
-
-    top_k=3
+    candidates,
+    top_k=FINAL_TOP_K
 
 ):
+    with open(image_path, "rb") as f:
+        image_bytes = f.read()
 
     candidates_text = []
 
-    for idx, (doc, meta) in enumerate(
+    for idx, item in enumerate(
 
-        zip(
-
-            accident_candidates["documents"][0],
-
-            accident_candidates["metadatas"][0]
-
-        ),
-
+        candidates,
         start=1
 
     ):
+
+        meta = item["metadata"]
+        doc = item["document"]
 
         candidates_text.append(
             f"""
 [{idx}]
 
 파일명:
-{meta.get("filename", "")}
+{meta.get("filename","")}
 
 산업군:
-{meta.get("industry", "")}
+{meta.get("industry","")}
 
 내용:
-{doc[:800]}
+{doc[:500]}
 """
         )
 
     prompt = f"""
 당신은 산업안전 전문가이다.
 
-현재 이미지 위험정보:
+이미지와 vision_output을 함께 분석하여 종합적으로 고려하여 가장 유사한 사고사례 5개를 선택하라.
+현재 위험상황과 가장 유사한 사고사례를 관련도 순으로 재정렬하라.
+
+현재 위험상황:
 
 {json.dumps(
     vision_output,
@@ -280,76 +459,339 @@ def rerank_accident_cases(
 
 {''.join(candidates_text)}
 
-현재 위험상황과 가장 유사한 사고사례 {top_k}개를 선택하라.
 
-판단 기준:
+판단 기준
 
 1. 사고유형 일치
-2. 위험설비 일치
-3. 위험행동 일치
-4. 재해형태(추락, 끼임, 충돌 등) 일치
+2. 위험행동 일치
+3. 위험설비 일치 
+4. 위험환경 일치
 
-반드시 JSON만 출력
-
-예시:
+- 특정 키워드 하나에 집중하지 말고, 전체 작업 상황에서 가장 직접적으로 발생 가능한 사고사례를 우선 선택하라.
+- 반드시 JSON 형식으로 출력할 것.
 
 {{
-  "selected": [3, 8, 10]
+  "selected":[1,5,2,8,3]
 }}
 """
 
     response = vision_client.models.generate_content(
-        model="gemini-3.1-flash-lite",
-        contents=prompt
 
+        model="gemini-3.5-flash",
+
+        contents=[ 
+            prompt,
+            types.Part.from_bytes(
+                data=image_bytes,
+                mime_type="image/jpeg"
+            )
+        ],
+
+        config=types.GenerateContentConfig(
+            temperature=0.0,
+            response_mime_type="application/json"
+        )
     )
 
-    response_text = response.text.strip()
+    try:
 
-    response_text = response_text.replace(
-        "```json",
-        ""
-    )
+        response_text = (
+            response.text
+            .replace("```json","")
+            .replace("```","")
+            .strip()
+        )
 
-    response_text = response_text.replace(
-        "```",
-        ""
-    )
+        match = re.search(
+            r"\{[\s\S]*\}",
+            response_text
+        )
 
-    result = json.loads(
-        response_text
-    )
+        if not match:
+            raise ValueError(
+                "JSON not found"
+            )
 
-    selected = result["selected"]
+        result = json.loads(
+            match.group()
+        )
 
-    reranked_docs = []
-    reranked_meta = []
+    except Exception:
+
+        print("ACCIDENT RERANK ERROR")
+        print(response.text)
+
+        return candidates[:top_k]
+    
+    selected = result.get("selected", [])
+
+    if len(selected) == 0:
+        return candidates[:top_k]
+    
+    valid_selected = []
 
     for idx in selected:
 
-        reranked_docs.append(
+        if (
+            1 <= idx <= len(candidates)
+            and idx not in valid_selected
+        ):
+            valid_selected.append(idx)
 
-            accident_candidates["documents"][0][idx - 1]
+    reranked = [
+        candidates[i-1]
+        for i in valid_selected[:top_k]
+    ]
 
+    return reranked
+
+
+def rerank_law_cases(
+    image_path,
+    vision_output,
+    candidates,
+    top_k=FINAL_TOP_K
+
+):
+    with open(image_path, "rb") as f:
+        image_bytes = f.read()
+
+    candidates_text = []
+
+    for idx, item in enumerate(
+
+        candidates,
+        start=1
+
+    ):
+
+        meta = item["metadata"]
+        doc = item["document"]
+
+        candidates_text.append(
+            f"""
+[{idx}]
+
+조항:
+{meta.get("article","")}
+
+내용:
+{doc[:500]}
+"""
         )
 
-        reranked_meta.append(
+    prompt = f"""
+당신은 산업안전보건기준에 관한 규칙 전문가이다.
 
-            accident_candidates["metadatas"][0][idx - 1]
+이미지와 vision_output을 함께 분석하여 현재 위험상황에 가장 관련성이 높은 법령 5개를 선택하라.
 
+현재 위험상황:
+
+{json.dumps(
+    vision_output,
+    ensure_ascii=False,
+    indent=2
+)}
+
+후보 법령:
+
+{''.join(candidates_text)}
+
+판단 기준
+
+1. 설비 일치
+2. 작업유형 일치
+3. 사고유형 일치
+4. 예방조치 일치
+
+- 반드시 JSON 형식으로 출력할 것.
+
+{{
+  "selected":[4,1,2,8,3]
+}}
+"""
+
+    response = vision_client.models.generate_content(
+
+        model="gemini-3.5-flash",
+
+        contents=[ 
+            prompt,
+            types.Part.from_bytes(
+                data=image_bytes,
+                mime_type="image/jpeg"
+            )
+        ],
+        config=types.GenerateContentConfig(
+            temperature=0.0,
+            response_mime_type="application/json"
+        )
+    )
+
+    try:
+
+        response_text = (
+            response.text
+            .replace("```json","")
+            .replace("```","")
+            .strip()
         )
 
-    return {
+        match = re.search(
+            r"\{[\s\S]*\}",
+            response_text
+        )
 
-        "documents": [reranked_docs],
+        if not match:
+            raise ValueError(
+                "JSON not found"
+            )
 
-        "metadatas": [reranked_meta]
+        result = json.loads(
+            match.group()
+        )
 
-    }
+    except Exception:
+
+        print("LAW RERANK ERROR")
+        print(response.text)
+
+        return candidates[:top_k]
+    
+    selected = result.get("selected", [])
+
+    if len(selected) == 0:
+        return candidates[:top_k]
+    
+    valid_selected = []
+
+    for idx in selected:
+        if (
+            1 <= idx <= len(candidates)
+            and idx not in valid_selected
+        ):
+            valid_selected.append(idx)
+    reranked = [
+
+        candidates[i-1]
+        for i in valid_selected[:top_k]
+    ]
+
+    return reranked
 
 # =====================================================
-# Context Builder
+# PRINT
 # =====================================================
+
+def print_results(
+
+    title,
+    results,
+    is_law=False
+
+):
+
+    print("\n")
+    print("=" * 100)
+    print(title)
+    print("=" * 100)
+
+    for rank, item in enumerate(
+
+        results,
+
+        start=1
+
+    ):
+
+        meta = item["metadata"]
+
+        print("\n")
+        print("-" * 80)
+
+        print(
+            f"TOP {rank}"
+        )
+
+        if is_law:
+
+            print(
+                f"ARTICLE : {meta['article']}"
+            )
+
+        else:
+
+            print(
+                f"FILENAME : {meta['filename']}"
+            )
+
+        print()
+
+        print(
+            item["document"][:500]
+        )
+
+
+# =====================================================
+# ACCIDENT
+# =====================================================
+
+
+acc_bm25 = bm25_search_accident()
+
+acc_rerank = rerank_accident_cases(
+    IMAGE_PATH,
+    vision_output,
+    acc_bm25,
+)
+
+print_results(
+
+    "ACCIDENT - BM25",
+
+    acc_bm25
+)
+print_results(
+
+    "ACCIDENT - RERANK",
+
+    acc_rerank
+)
+
+
+# =====================================================
+# LAW
+# =====================================================
+
+
+law_bm25 = bm25_search_law()
+
+
+law_rerank = rerank_law_cases(
+    IMAGE_PATH,
+    vision_output,
+    law_bm25,
+)
+
+print_results(
+
+    "LAW - BM25",
+
+    law_bm25,
+
+    True
+)
+
+print_results(
+
+    "LAW - RERANK",
+
+    law_rerank,
+
+    True
+)
+
+
 
 def build_context(
     accident_results,
@@ -362,11 +804,11 @@ def build_context(
     # Accident Cases (Full Case)
     # =============================================
 
-    for doc, meta in zip(
-        accident_results["documents"][0],
-        accident_results["metadatas"][0]
-    ):
+    for item in accident_results:
 
+        doc = item["document"]
+        meta = item["metadata"]
+    
         context = f"""
 [유사 사고사례]
 
@@ -386,10 +828,10 @@ def build_context(
     # Laws
     # =============================================
 
-    for doc, meta in zip(
-        law_results["documents"][0],
-        law_results["metadatas"][0]
-    ):
+    for item in law_results:
+
+        doc = item["document"]
+        meta = item["metadata"]
 
         context = f"""
 [관련 법령]
@@ -405,16 +847,23 @@ def build_context(
 
     return "\n\n".join(contexts)
 
-
-# =====================================================
-# Final Generation
-# =====================================================
-
 def generate_final_response(
     image_path,
     vision_output,
     context
 ):
+
+    json_schema = """
+{
+  "hazards": ["주요 위험요소"],
+  "accidents": ["발생 가능한 사고"],
+  "preventions": ["예방대책"],
+  "related_laws": [{
+    "article": "조항명",
+    "content": "내용"}]
+}
+"""
+
 
     prompt = f"""
 당신은 산업안전 전문가이다.
@@ -439,21 +888,27 @@ RAG CONTEXT
 TASK
 ========================
 
-입력 이미지를 분석하여
+입력 이미지를 분석하여 다음 내용을 도출하라.
 
 1. 주요 위험요소
-2. 발생 가능한 사고
-3. 필요한 안전조치
-4. 예방대책
-5. 관련 법령
+2. 발생 가능한 아차사고(Near Miss)
+3. 예방대책
+4. 관련 법령
 
-을 설명하라.
+아차사고(Near Miss)는 실제 사고로 이어지지는 않았지만,
+현재 상황에서 사고가 발생할 수 있었던 위험한 순간을 의미한다.
 
-주의:
-
+## 주의사항
 - 이미지를 최우선으로 판단
-- 사고사례는 참고자료
-- 법령은 반드시 RAG CONTEXT 내 법령만 사용
+- 발생 가능한 사고는 아차사고(Near Miss) 관점에서 작성할 것.
+- 사고사례 RAG CONTEXT 는 발생 가능한 아차사고(accidents)와 예방대책 (preventions)을 도출하는 참고자료로 활용할 것.
+- 법령은 반드시 RAG CONTEXT 내 법령만 사용할 것.
+- 관련성이 높은 법령을 최대 5개까지 출력하라.
+
+반드시 아래 JSON 형식으로만 출력하라.
+
+{json_schema}
+
 """
 
     with open(image_path, "rb") as f:
@@ -461,145 +916,44 @@ TASK
 
     response = multimodal_client.models.generate_content(
 
-        model="gemini-3.5-flash",
+        model="gemini-3.1-pro-preview",
 
         contents=[
             prompt,
-
             types.Part.from_bytes(
                 data=image_bytes,
                 mime_type="image/jpeg"
             ),
-        ]
+        ],
+
+        config=types.GenerateContentConfig(
+            temperature=0.0,
+            response_mime_type="application/json"
+        )
     )
 
     return response.text
 
+context = build_context(
+    acc_rerank,
+    law_rerank
+)
 
-# =====================================================
-# Pipeline
-# =====================================================
+final_response = generate_final_response(
+    IMAGE_PATH,
+    vision_output,
+    context
+)
 
-def run_pipeline(image_path):
+print("\n")
+print("=" * 100)
+print("FINAL RESPONSE")
+print("=" * 100)
 
-    print("=" * 50)
-    print("STEP 1: VISION")
-    print("=" * 50)
+print(final_response)
 
-    vision_output = analyze_image(
-        image_path
-    )
+log_file.close()
 
-    print(
-        json.dumps(
-            vision_output,
-            ensure_ascii=False,
-            indent=2
-        )
-    )
-
-    print("\n")
-    print("=" * 50)
-    print("STEP 2: QUERY")
-    print("=" * 50)
-
-    query = build_query(
-        vision_output
-    )
-
-    print(query)
-
-    print("\n")
-    print("=" * 50)
-    print("STEP 3: RETRIEVAL")
-    print("=" * 50)
-
-    accident_candidates = retrieve_accident_cases(    
-        query,
-        top_k=10
-    )
-    
-    accident_results = rerank_accident_cases(
-        vision_output,
-        accident_candidates,
-        top_k=3
-    
-    )
-    
-    law_results = retrieve_laws(
-        query
-    )
-
-    print("\n[RERANKED ACCIDENT CASES]")
-
-    print("\n")
-    print("=" * 50)
-    print("STEP 3-1: RERANK")
-    print("=" * 50)
-
-    for i, doc in enumerate(
-        accident_results["documents"][0]
-    ):
-
-        print(f"\nTOP {i+1}")
-
-        print(
-            accident_results["metadatas"][0][i]
-        )
-
-        print(doc[:1000])
-
-    print("\n[LAWS]")
-
-    for i, doc in enumerate(
-        law_results["documents"][0]
-    ):
-
-        print(f"\nTOP {i+1}")
-
-        print(
-            law_results["metadatas"][0][i]
-        )
-
-        print(doc[:1000])
-
-    print("\n")
-    print("=" * 50)
-    print("STEP 4: CONTEXT")
-    print("=" * 50)
-
-    context = build_context(
-        accident_results,
-        law_results
-    )
-
-    print(context[:3000])
-
-    print("\n")
-    print("=" * 50)
-    print("STEP 5: FINAL GENERATION")
-    print("=" * 50)
-
-    return generate_final_response(
-        image_path,
-        vision_output,
-        context
-    )
-
-
-# =====================================================
-# RUN
-# =====================================================
-
-if __name__ == "__main__":
-
-    response = run_pipeline(
-        IMAGE_PATH
-    )
-
-    print("\n")
-    print("=" * 50)
-    print("FINAL RESPONSE")
-    print("=" * 50)
-
-    print(response)
+_original_print(
+    f"Logs saved to {LOG_FILE}"
+)
