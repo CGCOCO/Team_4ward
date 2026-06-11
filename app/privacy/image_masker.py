@@ -14,9 +14,9 @@ import numpy as np
 from ultralytics import YOLO
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_FACE_MODEL_PATH = PROJECT_ROOT / "models" / "face_yolo.pt"
-DEFAULT_PLATE_MODEL_PATH = PROJECT_ROOT / "models" / "license_plate_yolo.pt"
+APP_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_FACE_MODEL_PATH = APP_ROOT / "models" / "face_yolo.pt"
+DEFAULT_PLATE_MODEL_PATH = APP_ROOT / "models" / "license_plate_yolo.pt"
 
 
 def _resolve_model_path(env_name: str, default_path: Path) -> Path:

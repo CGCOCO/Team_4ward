@@ -1,4 +1,5 @@
 .venv
+venv/
 __pycache__/
 *.py[cod]
 
@@ -12,7 +13,12 @@ frontend/dist/
 
 # Generated debug outputs
 debug_blurred_latest.jpg
+app_data.sqlite3
+*.sqlite3
 
 # ML model weights
-models/
+app/models/*
+!app/models/.gitkeep
 *.pt
+*.onnx
+*.engine

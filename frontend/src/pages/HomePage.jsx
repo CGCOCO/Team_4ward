@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Shield, Camera, Image, History, Settings, TriangleAlert, Zap, Flame, Footprints, PackageOpen, Cog, FlaskConical } from 'lucide-react'
+import { Shield, Camera, Image, History, Settings, LogOut, TriangleAlert, Zap, Flame, Footprints, PackageOpen, Cog, FlaskConical } from 'lucide-react'
+import { clearToken } from '../api'
 import Layout from '../components/Layout'
 
 const hazardRow1 = [
@@ -39,6 +40,11 @@ export default function HomePage() {
     navigate('/preview', { state: { previewUrl, file } })
   }
 
+  const handleLogout = () => {
+    clearToken()
+    navigate('/login', { replace: true })
+  }
+
   return (
     <Layout>
       {/* Header */}
@@ -55,6 +61,9 @@ export default function HomePage() {
           </button>
           <button onClick={() => navigate('/admin')} className="text-slate-500 active:text-slate-700">
             <Settings size={22} />
+          </button>
+          <button onClick={handleLogout} className="text-slate-500 active:text-slate-700">
+            <LogOut size={22} />
           </button>
         </div>
       </header>

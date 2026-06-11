@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ScanSearch, Brain, FileCheck, Lightbulb, Shield, Loader } from 'lucide-react'
-import axios from 'axios'
+import { api } from '../api'
 import Layout from '../components/Layout'
 
 const steps = [
@@ -13,6 +13,30 @@ const steps = [
 ]
 
 const MIN_ANIM_MS = steps.length * 1200 + 800
+const pendingAnalysisRequests = new Map()
+
+function getAnalysisKey(file) {
+  if (!file) return 'no-file'
+  return `${file.name}:${file.size}:${file.lastModified}`
+}
+
+function requestAnalysis(file) {
+  if (!file) return Promise.resolve({ data: null })
+
+  const key = getAnalysisKey(file)
+  const pendingRequest = pendingAnalysisRequests.get(key)
+  if (pendingRequest) return pendingRequest
+
+  const fd = new FormData()
+  fd.append('file', file)
+
+  const request = api
+    .post('/api/v1/analyze', fd)
+    .finally(() => pendingAnalysisRequests.delete(key))
+
+  pendingAnalysisRequests.set(key, request)
+  return request
+}
 
 export default function AnalyzingPage() {
   const navigate = useNavigate()
@@ -21,31 +45,31 @@ export default function AnalyzingPage() {
   const [currentStep, setCurrentStep] = useState(0)
 
   useEffect(() => {
+    let ignore = false
+
     const stepTimers = steps.map((_, i) =>
       setTimeout(() => setCurrentStep(i), i * 1200)
     )
 
-    const apiCall = file
-      ? axios.post('http://localhost:8000/api/v1/analyze', (() => {
-          const fd = new FormData()
-          fd.append('file', file)
-          return fd
-        })())
-      : Promise.resolve({ data: null })
-
+    const apiCall = requestAnalysis(file)
     const animDone = new Promise((res) => setTimeout(res, MIN_ANIM_MS))
 
     Promise.all([apiCall, animDone])
       .then(([response]) => {
+        if (ignore) return
         navigate('/result', { state: { previewUrl, result: response.data } })
       })
       .catch(() => {
+        if (ignore) return
         // API 실패 시 mock 데이터로 결과 페이지 이동
         navigate('/result', { state: { previewUrl, result: null } })
       })
 
-    return () => stepTimers.forEach(clearTimeout)
-  }, [])
+    return () => {
+      ignore = true
+      stepTimers.forEach(clearTimeout)
+    }
+  }, [file, navigate, previewUrl])
 
   const { label, icon: Icon } = steps[currentStep]
 
