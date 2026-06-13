@@ -1,0 +1,635 @@
+
+ID: 1
+Hazard:3
+Accident:3
+Prevention:4
+Law:3
+
+ID: 2
+Hazard:4
+Accident:4
+Prevention:4
+Law:3
+
+ID: 3
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 4
+Hazard:5
+Accident:5
+Prevention:5
+Law:4
+
+ID: 5
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 6
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 7
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 8
+Hazard:4
+Accident:4
+Prevention:5
+Law:5
+
+ID: 9
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 10
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 11
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 12
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 13
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 14
+Hazard:5
+Accident:3
+Prevention:5
+Law:5
+
+ID: 15
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 16
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 17
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 18
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 19
+Hazard:4
+Accident:5
+Prevention:5
+Law:5
+
+ID: 20
+Hazard:4
+Accident:4
+Prevention:4
+Law:4
+
+ID: 21
+Hazard:4
+Accident:4
+Prevention:4
+Law:4
+
+ID: 22
+Hazard:4
+Accident:4
+Prevention:4
+Law:4
+
+ID: 23
+Hazard:4
+Accident:4
+Prevention:4
+Law:4
+
+ID: 24
+Hazard:4
+Accident:4
+Prevention:4
+Law:4
+
+ID: 25
+Hazard:5
+Accident:4
+Prevention:4
+Law:5
+
+ID: 26
+Hazard:5
+Accident:4
+Prevention:4
+Law:5
+
+ID: 27
+Hazard:5
+Accident:5
+Prevention:5
+Law:3
+
+ID: 28
+Hazard:5
+Accident:5
+Prevention:4
+Law:5
+
+ID: 29
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 30
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 31
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 32
+Hazard:4
+Accident:5
+Prevention:5
+Law:5
+
+ID: 33
+Hazard:5
+Accident:5
+Prevention:5
+Law:4
+
+ID: 34
+Hazard:4
+Accident:3
+Prevention:4
+Law:5
+
+ID: 35
+Hazard:5
+Accident:3
+Prevention:5
+Law:4
+
+ID: 36
+Hazard:5
+Accident:5
+Prevention:5
+Law:4
+
+ID: 37
+Hazard:4
+Accident:4
+Prevention:4
+Law:5
+
+ID: 38
+Hazard:4
+Accident:5
+Prevention:5
+Law:5
+
+ID: 39
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 40
+Hazard:5
+Accident:4
+Prevention:4
+Law:4
+
+ID: 41
+Hazard:4
+Accident:4
+Prevention:5
+Law:4
+
+ID: 42
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+ID: 43
+Hazard:4
+Accident:3
+Prevention:5
+Law:4
+
+ID: 44
+Hazard:4
+Accident:3
+Prevention:5
+Law:5
+
+ID: 45
+Hazard:3
+Accident:4
+Prevention:4
+Law:4
+
+ID: 46
+Hazard:4
+Accident:5
+Prevention:5
+Law:5
+
+ID: 47
+Hazard:4
+Accident:4
+Prevention:5
+Law:4
+
+ID: 48
+Hazard:4
+Accident:4
+Prevention:4
+Law:4
+
+ID: 49
+Hazard:4
+Accident:3
+Prevention:4
+Law:4
+
+ID: 50
+Hazard:5
+Accident:5
+Prevention:5
+Law:4
+
+ID: 51
+Hazard:5
+Accident:4
+Prevention:5
+Law:4
+
+ID: 52
+Hazard:4
+Accident:4
+Prevention:4
+Law:4
+
+ID: 53
+Hazard:5
+Accident:5
+Prevention:5
+Law:4
+
+ID: 54
+Hazard:3
+Accident:3
+Prevention:4
+Law:4
+
+ID: 55
+Hazard:4
+Accident:4
+Prevention:4
+Law:4
+
+ID: 56
+Hazard:5
+Accident:4
+Prevention:5
+Law:5
+
+ID: 57
+Hazard:3
+Accident:4
+Prevention:5
+Law:4
+
+ID: 58
+Hazard:5
+Accident:5
+Prevention:5
+Law:4
+
+ID: 59
+Hazard:4
+Accident:4
+Prevention:4
+Law:4
+
+ID: 60
+Hazard:4
+Accident:4
+Prevention:5
+Law:4
+
+ID: 61
+Hazard:4
+Accident:5
+Prevention:5
+Law:4
+
+ID: 62
+Hazard:4
+Accident:4
+Prevention:4
+Law:4
+
+ID: 63
+Hazard:4
+Accident:4
+Prevention:5
+Law:5
+
+ID: 64
+Hazard:4
+Accident:4
+Prevention:5
+Law:5
+
+ID: 65
+Hazard:5
+Accident:5
+Prevention:5
+Law:4
+
+ID: 66
+Hazard:5
+Accident:5
+Prevention:5
+Law:5
+
+
+ID: 67
+
+HAZARD:4
+ACCIDENT:4
+PREVENTION:4
+LAW:4
+================
+ID: 68
+
+HAZARD:4
+ACCIDENT:5
+PREVENTION:4
+LAW:4
+================
+ID: 69
+
+HAZARD:5
+ACCIDENT:4
+PREVENTION:4
+LAW:4
+================
+ID: 70
+
+HAZARD:4
+ACCIDENT:5
+PREVENTION:5
+LAW:5
+================
+ID: 71
+
+HAZARD:4
+ACCIDENT:5
+PREVENTION:5
+LAW:5
+================
+ID: 72
+
+HAZARD:4
+ACCIDENT:5
+PREVENTION:4
+LAW:4
+================
+ID: 73
+
+HAZARD:4
+ACCIDENT:4
+PREVENTION:4
+LAW:3
+================
+ID: 74
+
+HAZARD:3
+ACCIDENT:4
+PREVENTION:4
+LAW:3
+================
+ID: 75
+
+HAZARD:5
+ACCIDENT:5
+PREVENTION:5
+LAW:5
+================
+ID: 76
+
+HAZARD:5
+ACCIDENT:5
+PREVENTION:5
+LAW:5
+================
+ID: 77
+
+HAZARD:4
+ACCIDENT:5
+PREVENTION:5
+LAW:5
+================
+ID: 78
+
+HAZARD:4
+ACCIDENT:5
+PREVENTION:4
+LAW:5
+================
+ID: 79
+
+HAZARD:3
+ACCIDENT:4
+PREVENTION:5
+LAW:4
+================
+ID: 80
+
+HAZARD:4
+ACCIDENT:4
+PREVENTION:4
+LAW:4
+================
+ID: 81
+
+HAZARD:4
+ACCIDENT:4
+PREVENTION:4
+LAW:3
+================
+ID: 82
+
+HAZARD:4
+ACCIDENT:5
+PREVENTION:5
+LAW:5
+================
+ID: 83
+
+HAZARD:5
+ACCIDENT:5
+PREVENTION:5
+LAW:5
+================
+ID: 84
+
+HAZARD:4
+ACCIDENT:4
+PREVENTION:4
+LAW:4
+================
+ID: 85
+
+HAZARD:3
+ACCIDENT:4
+PREVENTION:5
+LAW:4
+================
+ID: 86
+
+HAZARD:3
+ACCIDENT:4
+PREVENTION:4
+LAW:4
+================
+ID: 87
+
+HAZARD:5
+ACCIDENT:5
+PREVENTION:5
+LAW:5
+================
+ID: 88
+
+HAZARD:4
+ACCIDENT:4
+PREVENTION:5
+LAW:5
+================
+ID: 89
+
+HAZARD:3
+ACCIDENT:4
+PREVENTION:5
+LAW:3
+================
+ID: 90
+
+HAZARD:5
+ACCIDENT:5
+PREVENTION:5
+LAW:3
+================
+ID: 91
+
+HAZARD:5
+ACCIDENT:5
+PREVENTION:5
+LAW:5
+================
+ID: 92
+
+HAZARD:4
+ACCIDENT:5
+PREVENTION:5
+LAW:5
+================
+ID: 93
+
+HAZARD:5
+ACCIDENT:5
+PREVENTION:5
+LAW:5
+================
+ID: 94
+
+HAZARD:5
+ACCIDENT:5
+PREVENTION:5
+LAW:4
+================
+ID: 95
+
+HAZARD:5
+ACCIDENT:5
+PREVENTION:5
+LAW:5
+================
+ID: 96
+
+HAZARD:5
+ACCIDENT:5
+PREVENTION:5
+LAW:5
+================
+ID: 97
+
+HAZARD:4
+ACCIDENT:5
+PREVENTION:5
+LAW:4
+================
+ID: 98
+
+HAZARD:3
+ACCIDENT:5
+PREVENTION:5
+LAW:5
+================
+ID: 99
+
+HAZARD:5
+ACCIDENT:5
+PREVENTION:5
+LAW:5
+================
+ID: 100
+
+HAZARD:5
+ACCIDENT:5
+PREVENTION:5
+LAW:5
