@@ -53,7 +53,7 @@ export default function HomePage() {
           <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center">
             <Shield size={18} className="text-white" />
           </div>
-          <span className="text-lg font-bold text-slate-900">Safety AI</span>
+          <span className="text-lg font-bold text-slate-900">Safe-Guard AI</span>
         </div>
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/history')} className="text-slate-500 active:text-slate-700">
@@ -117,7 +117,7 @@ export default function HomePage() {
       </div>
 
       {/* Certification badge */}
-      <div className="flex justify-center pb-6">
+      <div className="flex justify-center pb-6 -mt-4">
         <div className="flex items-center gap-1.5 border border-green-300 text-green-600 text-xs font-semibold px-4 py-2 rounded-full bg-green-50">
           <Shield size={13} />
           AI 안전 관리 인증

@@ -77,7 +77,8 @@ export default function AnalyzingPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
 
         {/* 상단: 아이콘 */}
-        <div className="relative flex items-center justify-center mb-6">
+        <div className="relative flex items-center justify-center mb-10">
+          <div className="absolute w-44 h-44 rounded-full border-2 border-blue-200 animate-ping" />
           <div className="absolute w-44 h-44 rounded-full border-2 border-blue-200" />
           <div className="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center">
             <Icon size={52} className="text-blue-500" strokeWidth={1.5} />

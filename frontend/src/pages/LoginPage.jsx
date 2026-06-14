@@ -35,7 +35,7 @@ export default function LoginPage() {
           <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mb-4">
             <Shield size={32} className="text-blue-600" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Safety AI</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Safe-Guard AI</h1>
           <p className="text-sm text-slate-500 mt-1">계정으로 로그인하세요</p>
         </div>
 
