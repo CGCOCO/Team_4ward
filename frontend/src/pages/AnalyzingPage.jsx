@@ -57,12 +57,11 @@ export default function AnalyzingPage() {
     Promise.all([apiCall, animDone])
       .then(([response]) => {
         if (ignore) return
-        navigate('/result', { state: { previewUrl, result: response.data } })
+        navigate('/result', { replace: true, state: { previewUrl, result: response.data, from: 'analysis' } })
       })
       .catch(() => {
         if (ignore) return
-        // API 실패 시 mock 데이터로 결과 페이지 이동
-        navigate('/result', { state: { previewUrl, result: null } })
+        navigate('/result', { replace: true, state: { previewUrl, result: null, from: 'analysis' } })
       })
 
     return () => {

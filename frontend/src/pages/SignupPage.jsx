@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Shield } from 'lucide-react'
-import { api, setToken } from '../api'
+import { api } from '../api'
 import Layout from '../components/Layout'
 
 export default function SignupPage() {
@@ -11,11 +11,13 @@ export default function SignupPage() {
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setSuccess('')
 
     if (password !== passwordConfirm) {
       setError('비밀번호가 일치하지 않습니다.')
@@ -24,9 +26,11 @@ export default function SignupPage() {
 
     setLoading(true)
     try {
-      const response = await api.post('/api/v1/auth/signup', { name, email, password })
-      setToken(response.data.access_token)
-      navigate('/', { replace: true })
+      await api.post('/api/v1/auth/signup', { name, email, password })
+      setSuccess('회원 가입 완료')
+      setTimeout(() => {
+        navigate('/login', { replace: true, state: { email } })
+      }, 900)
     } catch (err) {
       setError(err.response?.data?.detail ?? '회원가입에 실패했습니다.')
     } finally {
@@ -91,6 +95,7 @@ export default function SignupPage() {
           </label>
 
           {error && <p className="text-sm text-red-500">{error}</p>}
+          {success && <p className="text-sm text-green-600 font-semibold">{success}</p>}
 
           <button
             type="submit"

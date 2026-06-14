@@ -13,7 +13,7 @@ export default function PreviewPage() {
   }
 
   const handleAnalyze = () => {
-    navigate('/analyzing', { state: { previewUrl, file } })
+    navigate('/analyzing', { replace: true, state: { previewUrl, file } })
   }
 
   return (

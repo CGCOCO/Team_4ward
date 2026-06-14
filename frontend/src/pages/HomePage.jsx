@@ -98,13 +98,13 @@ export default function HomePage() {
 
         {/* Hazard type card */}
         <div className="w-full bg-slate-50 rounded-2xl p-5 border border-slate-100">
-          <p className="text-xs text-slate-500 text-center mb-4">AI가 자동으로 탐지하는 주요 위험 요소</p>
+          <p className="text-xs text-slate-500 text-center mb-4">AI가 자동으로 탐지하는 다양한 위험 요소</p>
           <div className="flex flex-col gap-4">
-            {/* 1행: 추락, 감전, 화재 */}
+            {/* 1행 */}
             <div className="flex justify-around">
               {hazardRow1.map((h) => <HazardIcon key={h.label} {...h} size={12} />)}
             </div>
-            {/* 2행: 넘어짐, 낙하, 끼임, 화학물질 */}
+            {/* 2행 */}
             <div className="flex justify-around">
               {hazardRow2.map((h) => <HazardIcon key={h.label} {...h} size={12} />)}
             </div>
@@ -112,7 +112,7 @@ export default function HomePage() {
         </div>
 
         <p className="text-xs text-slate-400 text-center mt-4 leading-relaxed">
-          추락, 감전, 화재 등 7가지를 포함한 위험 요소를 자동 탐지하고<br />산업안전보건기준에 관한 규칙 기반으로 예방 방법을 제공합니다
+          산업 현장과 일상생활의 다양한 위험 요소를 자동 분석하고<br />상황별 예방 방법을 제공합니다
         </p>
       </div>
 

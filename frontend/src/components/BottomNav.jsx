@@ -1,9 +1,8 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Home, Camera, FileText, Settings } from 'lucide-react'
+import { Home, FileText, Settings } from 'lucide-react'
 
 const tabs = [
   { path: '/', label: '홈', icon: Home },
-  { path: '/result', label: '진단', icon: Camera },
   { path: '/history', label: '이력', icon: FileText },
   { path: '/admin', label: '관리', icon: Settings },
 ]

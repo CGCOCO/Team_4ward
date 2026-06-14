@@ -10,6 +10,7 @@ frontend/dist/
 # Local environment files
 .env
 *.local
+.txt
 
 # Generated debug outputs
 debug_blurred_latest.jpg

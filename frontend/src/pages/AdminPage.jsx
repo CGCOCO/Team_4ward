@@ -1,87 +1,143 @@
-import { useState } from 'react'
-import { Shield, CheckCircle, Upload } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { BarChart3, FileText, LogOut, Mail, Upload, User } from 'lucide-react'
 import Layout from '../components/Layout'
-
-// TODO: API에서 분석 사례 목록 fetch
-const MOCK_CASES = [
-  { id: 1, title: '3공장 B구역 점검', date: '2025-05-15', hazardCount: 4, saved: true },
-  { id: 2, title: '사무동 2층 안전 점검', date: '2025-05-12', hazardCount: 2, saved: false },
-  { id: 3, title: '물류 센터 주간 점검', date: '2025-05-10', hazardCount: 6, saved: true },
-]
+import { api, clearToken } from '../api'
 
 export default function AdminPage() {
-  const [cases, setCases] = useState(MOCK_CASES)
+  const navigate = useNavigate()
+  const [history, setHistory] = useState([])
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [regulationFile, setRegulationFile] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  const handleSave = (id) => {
-    // TODO: POST /api/admin/cases/:id/save → ChromaDB 저장
-    setCases((prev) => prev.map((c) => (c.id === id ? { ...c, saved: true } : c)))
+  useEffect(() => {
+    let ignore = false
+
+    async function loadMyPage() {
+      try {
+        const [meResponse, historyResponse] = await Promise.all([
+          api.get('/api/v1/auth/me'),
+          api.get('/api/v1/analyze/history'),
+        ])
+        if (ignore) return
+
+        setName(meResponse.data.name ?? '')
+        setEmail(meResponse.data.email ?? '')
+        setHistory(historyResponse.data)
+      } catch (err) {
+        if (err.response?.status === 401) {
+          clearToken()
+          navigate('/login', { replace: true })
+          return
+        }
+        if (!ignore) setError('마이페이지 정보를 불러오지 못했습니다.')
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+
+    loadMyPage()
+
+    return () => {
+      ignore = true
+    }
+  }, [navigate])
+
+  function handleLogout() {
+    clearToken()
+    navigate('/login', { replace: true })
   }
 
   return (
     <Layout>
       <header className="px-5 pt-10 pb-4 border-b border-slate-100">
-        <p className="text-xs text-blue-600 font-semibold mb-1">관리자</p>
-        <h1 className="text-xl font-bold text-slate-900">우수 사례 관리</h1>
-        <p className="text-sm text-slate-500 mt-1">RAG 학습에 활용할 우수 진단 사례를 저장합니다</p>
+        <p className="text-xs text-blue-600 font-semibold mb-1">마이페이지</p>
+        <h1 className="text-xl font-bold text-slate-900">계정 관리</h1>
+        <p className="text-sm text-slate-500 mt-1">계정 정보와 회사 내규 자료를 관리합니다</p>
       </header>
 
       <div className="px-5 py-4 flex flex-col gap-4">
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
-            <p className="text-2xl font-bold text-blue-600">
-              {cases.filter((c) => c.saved).length}
-            </p>
-            <p className="text-xs text-blue-400 mt-0.5">저장된 사례</p>
+        {loading ? (
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
+            <p className="text-sm text-slate-400">마이페이지 정보를 불러오는 중입니다</p>
           </div>
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-            <p className="text-2xl font-bold text-slate-700">{cases.length}</p>
-            <p className="text-xs text-slate-400 mt-0.5">전체 진단</p>
+        ) : error ? (
+          <div className="bg-white rounded-2xl border border-red-100 p-5">
+            <p className="text-sm font-semibold text-red-500">{error}</p>
           </div>
-        </div>
-
-        {/* PDF upload for custom regulations */}
-        <div className="bg-white rounded-2xl border border-dashed border-blue-300 p-4 flex flex-col items-center gap-2">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-            <Upload size={20} className="text-blue-500" />
-          </div>
-          <p className="text-sm font-semibold text-slate-700">사내 규정 PDF 업로드</p>
-          <p className="text-xs text-slate-400 text-center">업로드한 PDF를 기반으로 커스텀 RAG를 구성합니다</p>
-          {/* TODO: PDF 업로드 → POST /api/admin/regulations */}
-          <button className="mt-1 bg-blue-600 text-white text-sm font-semibold px-5 py-2 rounded-xl active:bg-blue-700">
-            파일 선택
-          </button>
-        </div>
-
-        {/* Case list */}
-        <div className="flex flex-col gap-3">
-          <p className="text-sm font-semibold text-slate-700">진단 사례 목록</p>
-          {cases.map((c) => (
-            <div key={c.id} className="bg-white rounded-2xl border border-slate-200 p-4">
-              <div className="flex items-start justify-between mb-1">
-                <p className="text-sm font-semibold text-slate-800">{c.title}</p>
-                {c.saved && (
-                  <div className="flex items-center gap-1 text-xs text-green-600 font-semibold flex-shrink-0 ml-2">
-                    <CheckCircle size={13} />
-                    저장됨
-                  </div>
-                )}
+        ) : (
+          <>
+            <section className="bg-white rounded-2xl border border-slate-200 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <BarChart3 size={18} className="text-blue-600" />
+                <h2 className="text-base font-bold text-slate-900">사용 현황</h2>
               </div>
-              <p className="text-xs text-slate-400 mb-3">
-                {c.date} · 위험 요소 {c.hazardCount}건
+              <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
+                <p className="text-3xl font-bold text-blue-600">{history.length}</p>
+                <p className="text-sm font-semibold text-blue-500 mt-1">총 분석 건수</p>
+                <p className="text-xs text-blue-400 mt-1">현재 계정으로 생성한 진단 이력 기준입니다</p>
+              </div>
+            </section>
+
+            <section className="bg-white rounded-2xl border border-slate-200 p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <User size={18} className="text-blue-600" />
+                <h2 className="text-base font-bold text-slate-900">내 정보</h2>
+              </div>
+              <div className="flex flex-col gap-3">
+                <div className="rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
+                  <p className="text-xs font-semibold text-slate-400 mb-1">이름</p>
+                  <p className="text-sm font-semibold text-slate-800">{name || '이름 없음'}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Mail size={14} className="text-slate-400" />
+                    <p className="text-xs font-semibold text-slate-400">이메일</p>
+                  </div>
+                  <p className="text-sm font-semibold text-slate-800">{email}</p>
+                </div>
+              </div>
+            </section>
+
+            <section className="bg-white rounded-2xl border border-dashed border-blue-300 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Upload size={18} className="text-blue-600" />
+                <h2 className="text-base font-bold text-slate-900">회사 내규 PDF</h2>
+              </div>
+              <p className="text-sm text-slate-500 mb-3">
+                회사 내부 안전 규정을 업로드해 전용 RAG 자료로 활용합니다.
               </p>
-              {!c.saved && (
-                <button
-                  onClick={() => handleSave(c.id)}
-                  className="w-full bg-blue-50 text-blue-600 font-semibold text-sm py-2.5 rounded-xl border border-blue-200 active:bg-blue-100 transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <Shield size={15} />
-                  ChromaDB에 우수 사례 저장
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+              <label className="flex items-center justify-center gap-2 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 active:bg-slate-50">
+                <FileText size={16} />
+                <span>{regulationFile ? regulationFile.name : 'PDF 파일 선택'}</span>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={(e) => setRegulationFile(e.target.files?.[0] ?? null)}
+                />
+              </label>
+              <button
+                type="button"
+                disabled
+                className="w-full mt-3 bg-slate-200 text-slate-500 font-semibold py-3 rounded-xl"
+              >
+                RAG 업로드 연동 예정
+              </button>
+            </section>
+
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 border border-slate-200 text-slate-600 font-semibold py-3 rounded-xl active:bg-slate-50"
+            >
+              <LogOut size={17} />
+              로그아웃
+            </button>
+          </>
+        )}
       </div>
     </Layout>
   )

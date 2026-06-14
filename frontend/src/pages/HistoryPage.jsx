@@ -141,7 +141,7 @@ export default function HistoryPage() {
             return (
             <button
               key={item.id}
-              onClick={() => navigate('/result', { state: { result: item } })}
+              onClick={() => navigate('/result', { state: { result: item, from: 'history' } })}
               className="text-left bg-white rounded-2xl border border-slate-200 p-4 active:bg-slate-50 transition-colors w-full"
             >
               <div className="flex items-start justify-between mb-1">
