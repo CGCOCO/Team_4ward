@@ -11,7 +11,6 @@ from app.services.storage_service import upload_analysis_image
 
 
 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
-DEBUG_BLURRED_IMAGE_PATH = Path("debug_blurred_latest.jpg")
 
 
 def _get_temp_suffix(content_type: str | None) -> str:
@@ -82,8 +81,6 @@ async def analyze_image_service(image: UploadFile, current_user: dict) -> dict:
             status_code=500,
             detail=str(exc),
         ) from exc
-
-    DEBUG_BLURRED_IMAGE_PATH.write_bytes(masked_image_bytes)
 
     # 6. AI 위험 분석 실행
     suffix = _get_temp_suffix(image.content_type)

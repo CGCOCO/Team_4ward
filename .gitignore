@@ -1,21 +1,30 @@
-.venv
+# Python environment/cache
+.venv/
 venv/
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # Frontend dependencies/build output
 frontend/node_modules/
 frontend/dist/
+frontend/.vite/
 
 # Local environment files
 .env
 *.local
-.txt
+.DS_Store
 
-# Generated debug outputs
+# Local database/debug outputs
 debug_blurred_latest.jpg
 app_data.sqlite3
-*.sqlite3
+
+# AI generated logs/results
+app/ai/scripts/results/
 
 # ML model weights
 app/models/*

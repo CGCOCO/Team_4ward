@@ -2,6 +2,7 @@ import chromadb
 import vertexai
 import json
 import re
+import sys
 from pathlib import Path
 from google import genai
 from google.genai.types import HttpOptions
@@ -9,8 +10,6 @@ from google.genai import types
 
 from rank_bm25 import BM25Okapi
 from kiwipiepy import Kiwi
-import builtins
-from datetime import datetime
 
 # =====================================================
 # CONFIG
@@ -27,12 +26,8 @@ FINAL_TOP_K = 5
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 CHROMA_PATH = str(SCRIPT_DIR / "chroma_db")
-DEFAULT_IMAGE_PATH = SCRIPT_DIR / "image" / "전도.jpg"
-RESULT_DIR = SCRIPT_DIR / "results" / "final"
 
 kiwi = Kiwi()
-_original_print = builtins.print
-log_file = None
 # =====================================================
 # Vertex AI
 # =====================================================
@@ -87,18 +82,6 @@ def tokenize(text):
             and token.form not in STOPWORDS
         )
     ]
-def print(*args, **kwargs):
-
-    text = " ".join(
-        str(arg)
-        for arg in args
-    )
-
-    if log_file is None:
-        _original_print(text)
-        return
-
-    log_file.write(text + "\n")
 # =====================================================
 # Vision Analysis
 # =====================================================
@@ -850,53 +833,37 @@ def parse_final_response(response_text):
 
 def run_analysis(image_path):
     global IMAGE_PATH
-    global LOG_FILE
-    global log_file
     global vision_output
     global query
 
     IMAGE_PATH = str(image_path)
-    image_name = Path(IMAGE_PATH).stem
 
-    RESULT_DIR.mkdir(parents=True, exist_ok=True)
-
-    time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    LOG_FILE = str(RESULT_DIR / f"{image_name}_{time_str}.txt")
-
-    log_file = open(
-        LOG_FILE,
-        "w",
-        encoding="utf-8"
+    vision_output = analyze_image(
+        IMAGE_PATH
     )
 
-    try:
-        vision_output = analyze_image(
-            IMAGE_PATH
+    print("\n")
+    print("=" * 100)
+    print("VISION OUTPUT")
+    print("=" * 100)
+
+    print(
+        json.dumps(
+            vision_output,
+            ensure_ascii=False,
+            indent=2
         )
+    )
 
-        print("\n")
-        print("=" * 100)
-        print("VISION OUTPUT")
-        print("=" * 100)
+    descriptions = "\n".join(
+        vision_output["hazard_description"]
+    )
 
-        print(
-            json.dumps(
-                vision_output,
-                ensure_ascii=False,
-                indent=2
-            )
-        )
+    keywords = ", ".join(
+        vision_output["hazard_keywords"]
+    )
 
-        descriptions = "\n".join(
-            vision_output["hazard_description"]
-        )
-
-        keywords = ", ".join(
-            vision_output["hazard_keywords"]
-        )
-
-        query = f"""
+    query = f"""
 hazard_description:
 {descriptions}
 
@@ -904,106 +871,101 @@ hazard_keywords:
 {keywords}
 """
 
-        print("\n")
-        print("=" * 100)
-        print("QUERY")
-        print("=" * 100)
+    print("\n")
+    print("=" * 100)
+    print("QUERY")
+    print("=" * 100)
 
-        print(query)
+    print(query)
 
-        # bm25가 어떤 토큰을 사용하는지 확인하기
-        print("\n")
-        print("=" * 100)
-        print("BM25 TOKENS")
-        print("=" * 100)
+    # bm25가 어떤 토큰을 사용하는지 확인하기
+    print("\n")
+    print("=" * 100)
+    print("BM25 TOKENS")
+    print("=" * 100)
 
-        print(
-            tokenize(query)
-        )
+    print(
+        tokenize(query)
+    )
 
-        print("\n")
-        print("=" * 100)
-        print("TOKEN COUNT")
-        print("=" * 100)
+    print("\n")
+    print("=" * 100)
+    print("TOKEN COUNT")
+    print("=" * 100)
 
-        print(
-            len(tokenize(query))
-        )
+    print(
+        len(tokenize(query))
+    )
 
-        build_bm25_corpus()
+    build_bm25_corpus()
 
-        acc_bm25 = bm25_search_accident()
+    acc_bm25 = bm25_search_accident()
 
-        acc_rerank = rerank_accident_cases(
-            IMAGE_PATH,
-            vision_output,
-            acc_bm25,
-        )
+    acc_rerank = rerank_accident_cases(
+        IMAGE_PATH,
+        vision_output,
+        acc_bm25,
+    )
 
-        print_results(
-            "ACCIDENT - BM25",
-            acc_bm25
-        )
-        print_results(
-            "ACCIDENT - RERANK",
-            acc_rerank
-        )
+    print_results(
+        "ACCIDENT - BM25",
+        acc_bm25
+    )
+    print_results(
+        "ACCIDENT - RERANK",
+        acc_rerank
+    )
 
-        law_bm25 = bm25_search_law()
+    law_bm25 = bm25_search_law()
 
-        law_rerank = rerank_law_cases(
-            IMAGE_PATH,
-            vision_output,
-            law_bm25,
-        )
+    law_rerank = rerank_law_cases(
+        IMAGE_PATH,
+        vision_output,
+        law_bm25,
+    )
 
-        print_results(
-            "LAW - BM25",
-            law_bm25,
-            True
-        )
+    print_results(
+        "LAW - BM25",
+        law_bm25,
+        True
+    )
 
-        print_results(
-            "LAW - RERANK",
-            law_rerank,
-            True
-        )
+    print_results(
+        "LAW - RERANK",
+        law_rerank,
+        True
+    )
 
-        context = build_context(
-            acc_rerank,
-            law_rerank
-        )
+    context = build_context(
+        acc_rerank,
+        law_rerank
+    )
 
-        final_response = generate_final_response(
-            IMAGE_PATH,
-            vision_output,
-            context
-        )
+    final_response = generate_final_response(
+        IMAGE_PATH,
+        vision_output,
+        context
+    )
 
-        print("\n")
-        print("=" * 100)
-        print("FINAL RESPONSE")
-        print("=" * 100)
+    print("\n")
+    print("=" * 100)
+    print("FINAL RESPONSE")
+    print("=" * 100)
 
-        print(final_response)
+    print(final_response)
 
-        return parse_final_response(
-            final_response
-        )
-
-    finally:
-        log_file.close()
-        log_file = None
-
-        _original_print(
-            f"Logs saved to {LOG_FILE}"
-        )
+    return parse_final_response(
+        final_response
+    )
 
 
 if __name__ == "__main__":
-    _original_print(
+    if len(sys.argv) < 2:
+        raise SystemExit("Usage: python app/ai/scripts/main.py <image_path>")
+
+    print(
         json.dumps(
-            run_analysis(DEFAULT_IMAGE_PATH),
+            run_analysis(sys.argv[1]),
             ensure_ascii=False,
             indent=2
         )
