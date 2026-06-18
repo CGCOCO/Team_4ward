@@ -250,7 +250,9 @@ The project was motivated by Heinrich’s Law, which emphasizes the importance o
 
 ### 김 온
 
-- 개인정보 보호 모듈 개발
+- YOLO모델을 이용한 개인정보 보호 모듈 개발
+- 로그인/회원가입 구현
+- Google Cloud Storage로 마스킹된 이미지 업로드 로직 구현
 - FastAPI 기반 백엔드 개발
 - API 연동 및 서버 구축
 
