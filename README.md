@@ -272,7 +272,6 @@ The project was motivated by Heinrich’s Law, which emphasizes the importance o
 - 사용자 업로드 데이터를 활용한 산업안전 데이터셋 확장
 - 산업안전 특화 위험요소 탐지 모델 개발
 - 아차사고 예측을 위한 산업안전 전용 AI 모델 연구
-- 
 ---
 
 로컬 실행 방법은 [SETUP.md](./SETUP.md)를 참고하세요.
