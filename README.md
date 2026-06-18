@@ -8,7 +8,7 @@
 [결과 예시 이미지]
 
 <p align="center">
-  <img src="./assets/result_example.png" width="900">
+  <img src="./assets/result_example.jpg" width="900">
 </p>
 
 ---
