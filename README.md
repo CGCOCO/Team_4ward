@@ -241,6 +241,7 @@ The project was motivated by Heinrich’s Law, which emphasizes the importance o
 ### 정성우
 
 - Multimodal RAG 기반 위험 분석 파이프라인 설계
+- VLM 기반 위험요소 및 상황 설명 생성 모듈 설계
 - 사고사례 및 법령 데이터베이스 구축
 - BM25 검색 모듈 설계
 - LLM 기반 리랭킹 모듈 설계
