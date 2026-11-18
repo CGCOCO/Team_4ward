@@ -174,7 +174,7 @@ export default function ResultPage() {
       const url = URL.createObjectURL(response.data)
       const link = document.createElement('a')
       link.href = url
-      link.download = `safety-report-${result.id}.pdf`
+      link.download = `tbm-report-${result.id}.pdf`
       document.body.appendChild(link)
       link.click()
       link.remove()
@@ -243,7 +243,7 @@ export default function ResultPage() {
           className="flex items-center gap-1.5 border border-slate-300 text-slate-600 text-sm font-medium px-3 py-1.5 rounded-lg active:bg-slate-50 disabled:opacity-40 disabled:active:bg-transparent"
         >
           <FileText size={15} />
-          PDF
+          TBM
         </button>
       </header>
 
@@ -375,7 +375,7 @@ export default function ResultPage() {
           className="w-full bg-blue-600 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 text-base active:bg-blue-700 transition-colors shadow-md shadow-blue-200 disabled:opacity-45 disabled:active:bg-blue-600"
         >
           <FileText size={18} />
-          {isDownloading ? 'PDF 생성 중' : 'PDF 다운로드'}
+          {isDownloading ? 'TBM 회의록 생성 중' : 'TBM 회의록 PDF 다운로드'}
         </button>
       </div>
     </Layout>

@@ -733,7 +733,16 @@ def generate_final_response(
   "preventions": ["예방대책"],
   "related_laws": [{
     "article": "조항명",
-    "content": "내용"}]
+    "content": "내용"}],
+  "work_name": "사진에서 추정되는 작업명 (예: 지게차 화물 운반 작업)",
+  "work_content": "사진에서 확인되는 작업내용 한 문장",
+  "tbm_risks": [{
+    "hazard": "TBM 회의록에 기재할 잠재위험요인",
+    "measure": "해당 위험요인에 대응하는 대책"}],
+  "key_risk": {
+    "index": 1,
+    "reason": "중점위험으로 선정한 이유",
+    "measure": "중점위험요인에 대한 핵심 대책"}
 }
 """
 
@@ -777,6 +786,13 @@ TASK
 - 사고사례 RAG CONTEXT 는 발생 가능한 아차사고(accidents)와 예방대책 (preventions)을 도출하는 참고자료로 활용할 것.
 - 법령은 반드시 RAG CONTEXT 내 법령만 사용할 것.
 - 관련성이 높은 법령을 최대 5개까지 출력하라.
+
+## TBM(작업 전 안전점검회의) 회의록 항목
+- tbm_risks: 주요 위험요소 중 중요한 순서로 정확히 3개를 골라, 각 위험요인과 1:1로 대응하는 대책을 짝지어 작성할 것.
+- 대책은 제거 → 대체 → 통제(공학적·관리적 대책, 보호구) 순서를 고려하여 가장 근본적인 대책을 우선할 것.
+- key_risk: tbm_risks 중 중상해 이상의 산업재해로 이어질 가능성이 가장 높은 중점위험 1개를 선정하고,
+  index는 tbm_risks 내 순번(1~3)으로 기재할 것.
+- work_name, work_content는 이미지에서 확인 가능한 작업 기준으로 간결하게 작성하고, 판단이 어려우면 빈 문자열로 둘 것.
 
 반드시 아래 JSON 형식으로만 출력하라.
 

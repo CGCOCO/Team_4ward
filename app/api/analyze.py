@@ -6,7 +6,7 @@ from app.services.analyze_service import (
     get_analysis_detail_service,
     get_analysis_history_service,
 )
-from app.services.report_service import create_analysis_report_pdf
+from app.services.tbm_report_service import create_tbm_report_pdf
 from app.services.storage_service import download_analysis_image
 
 router = APIRouter()
@@ -55,11 +55,11 @@ def get_analysis_report(
     current_user: dict = Depends(get_current_user),
 ):
     analysis = get_analysis_detail_service(analysis_id, current_user)
-    pdf_bytes = create_analysis_report_pdf(analysis)
+    pdf_bytes = create_tbm_report_pdf(analysis)
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f'attachment; filename="safety-report-{analysis_id}.pdf"'
+            "Content-Disposition": f'attachment; filename="tbm-report-{analysis_id}.pdf"'
         },
     )
