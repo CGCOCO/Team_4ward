@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.auth import router as auth_router
 from app.api.analyze import router as analysis_router
+from app.api.advisor import router as advisor_router
 from app.db import init_db
 from app.privacy.image_masker import initialize_yolo_models
 
@@ -35,6 +36,12 @@ app.include_router(
     analysis_router,
     prefix="/api/v1/analyze",
     tags=["analyze"]
+)
+
+app.include_router(
+    advisor_router,
+    prefix="/api/v1/advisor",
+    tags=["advisor"]
 )
 
 @app.get("/health")
