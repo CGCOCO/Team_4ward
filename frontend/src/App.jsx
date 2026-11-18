@@ -5,6 +5,7 @@ import AnalyzingPage from './pages/AnalyzingPage'
 import ResultPage from './pages/ResultPage'
 import HistoryPage from './pages/HistoryPage'
 import AdminPage from './pages/AdminPage'
+import AdvisorPage from './pages/AdvisorPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import RequireAuth from './components/RequireAuth'
@@ -23,6 +24,7 @@ function App() {
         <Route path="/preview" element={<Protected><PreviewPage /></Protected>} />
         <Route path="/analyzing" element={<Protected><AnalyzingPage /></Protected>} />
         <Route path="/result" element={<Protected><ResultPage /></Protected>} />
+        <Route path="/advisor" element={<Protected><AdvisorPage /></Protected>} />
         <Route path="/history" element={<Protected><HistoryPage /></Protected>} />
         <Route path="/admin" element={<Protected><AdminPage /></Protected>} />
       </Routes>
