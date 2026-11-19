@@ -253,7 +253,7 @@ def bm25_search_accident(query):
 
 
 def bm25_search_law(query):
-    from app.rag.law_rag import search_laws
+    from app.rag.law_rag import search_articles
 
     return [
         {
@@ -261,7 +261,7 @@ def bm25_search_law(query):
             "document": article["text"],
             "metadata": article,
         }
-        for article in search_laws(query, top_k=BM25_TOP_K)
+        for article in search_articles(query, top_k=BM25_TOP_K)
     ]
 
 

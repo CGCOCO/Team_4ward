@@ -120,7 +120,7 @@ function AssistantMessage({ message, onCite, onAsk }) {
       {citedSources.length > 0 ? (
         <div className="flex flex-col gap-2 mt-1">
           <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
-            <BookOpen size={14} /> 근거 조문 {citedSources.length}건
+            <BookOpen size={14} /> 근거 자료 {citedSources.length}건
           </p>
           {citedSources.map((source) => (
             <SourceCard key={source.id} source={source} onOpen={onCite} />
@@ -163,7 +163,7 @@ function ArticleSheet({ source, onClose }) {
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{formatArticleText(source.text)}</p>
+          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{source.article.startsWith('별표 ') ? source.text : formatArticleText(source.text)}</p>
         </div>
         {source.url ? (
           <div className="px-5 pt-3 pb-6 border-t border-slate-100">
