@@ -40,10 +40,14 @@ ANSWER_SYSTEM_PROMPT = f"""
 
 REWRITE_PROMPT = """
 아래 대화의 마지막 사용자 질문을, 이전 대화 맥락 없이도 이해되는 법령 검색용 한 문장 질의로 바꿔라.
+질문과 관련 있는 현장 장비와 위험요소를 질의에 포함하되, 현장 상황에 없는 사실은 추가하지 마라.
 질의 문장만 출력하라.
 
 [대화]
 {history}
+
+[현장 상황]
+{context}
 
 [마지막 질문]
 {message}
@@ -176,15 +180,19 @@ def _format_history(history: list[dict]) -> str:
     )
 
 
-def rewrite_query(history: list[dict], message: str) -> str:
+def rewrite_query(history: list[dict], message: str, context: str | None = None) -> str:
+    situation = " ".join(context.split()) if context else ""
+    fallback = f"{message} {situation}" if situation else message
     if not history:
-        return message
+        return fallback
     response = _client().models.generate_content(
         model=MODEL,
-        contents=REWRITE_PROMPT.format(history=_format_history(history), message=message),
+        contents=REWRITE_PROMPT.format(
+            history=_format_history(history), context=situation, message=message
+        ),
         config=_config(temperature=0),
     )
-    return (response.text or "").strip() or message
+    return (response.text or "").strip() or fallback
 
 
 def _source_payload(index: int, article: LawArticle) -> dict:
@@ -256,7 +264,7 @@ def stream_chat(
         history = _load_history(session_id)
 
         yield _sse("progress", {"stage": "rewrite", "message": "질문을 이해하고 있습니다"})
-        query = rewrite_query(history, message)
+        query = rewrite_query(history, message, context)
 
         yield _sse("progress", {"stage": "search", "message": "관련 법령을 찾고 있습니다", "query": query})
         articles = get_rag().search_laws(query, top_k=TOP_K)
