@@ -3,6 +3,7 @@ import os
 import re
 from collections.abc import Iterator
 from functools import lru_cache
+from threading import Lock
 
 from fastapi import HTTPException
 from google import genai
@@ -16,6 +17,7 @@ PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "kun-kgp-mytnt831")
 MODEL = os.getenv("ADVISOR_MODEL", "gemini-3.5-flash")
 TOP_K = 6
 HISTORY_TURNS = 6  # 질의 재작성·답변에 넘길 최근 메시지 수
+_CLIENT_LOCK = Lock()
 
 DISCLAIMER = "※ 본 답변은 참고용이며 법적 판단이 아닙니다. 최신 법령 원문을 반드시 확인하세요."
 
@@ -33,6 +35,7 @@ ANSWER_SYSTEM_PROMPT = f"""
 6. 산업안전보건과 무관한 질문에는 답하지 말고 어드바이저의 역할을 안내한다.
 7. 마크다운 표·제목(#)은 쓰지 말고, 굵게(**)와 목록(- )만 사용한다.
 8. 마지막 줄에 다음 문장을 그대로 붙인다: {DISCLAIMER}
+9. 같은 조번호라도 법령명이 다르면 다른 근거다. 원문에 시행일 안내가 있으면 적용 시기와 대상을 구분하고, 아직 시행되지 않은 규정을 현재 의무로 설명하지 않는다.
 """.strip()
 
 REWRITE_PROMPT = """
@@ -59,8 +62,13 @@ FOLLOWUP_PROMPT = """
 
 
 @lru_cache(maxsize=1)
-def _client() -> genai.Client:
+def _create_client() -> genai.Client:
     return genai.Client(vertexai=True, project=PROJECT_ID, location="global")
+
+
+def _client() -> genai.Client:
+    with _CLIENT_LOCK:
+        return _create_client()
 
 
 def _config(**kwargs) -> types.GenerateContentConfig:
