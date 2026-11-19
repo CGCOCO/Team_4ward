@@ -77,6 +77,30 @@ def init_db() -> None:
 
             CREATE INDEX IF NOT EXISTS idx_analysis_results_user_id
                 ON analysis_results(user_id);
+
+            CREATE TABLE IF NOT EXISTS advisor_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS advisor_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id INTEGER NOT NULL,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                sources TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (session_id) REFERENCES advisor_sessions(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_advisor_sessions_user_id
+                ON advisor_sessions(user_id);
+            CREATE INDEX IF NOT EXISTS idx_advisor_messages_session_id
+                ON advisor_messages(session_id);
             """
         )
         _drop_pdf_url_column(conn)

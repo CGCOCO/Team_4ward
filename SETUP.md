@@ -90,3 +90,18 @@ uvicorn app.main:app --reload
 4. 분석 결과 확인
 5. 히스토리 확인
 6. PDF 다운로드 확인
+
+## 8. 어드바이저 법령 RAG
+
+어드바이저 기능이 포함된 브랜치에서 저장소 루트 기준으로 실행합니다.
+
+```powershell
+$env:RAG_BACKEND = "app.rag.law_rag"
+uvicorn app.main:app --reload
+```
+
+사진 분석과 어드바이저의 법령 검색은
+`app/ai/scripts/forge_db/law/lawData.json`에서 같은 조문 인덱스를 불러옵니다.
+현재 자료는 산업안전보건기준에 관한 규칙의 2025년 9월 1일 시행본입니다.
+스냅샷을 교체한 뒤 서버를 재시작하면 법령 인덱스가 다시 만들어집니다.
+사진 분석의 사고사례 검색에는 별도로 Chroma의 `accident_case_full` 컬렉션이 필요합니다.

@@ -19,7 +19,6 @@ PROJECT_ID = "kun-kgp-mytnt831"
 LOCATION = "us-central1"
 
 ACCIDENT_COLLECTION = "accident_case_full"
-LAW_COLLECTION = "kosha_rag_v2"
 
 BM25_TOP_K = 10
 FINAL_TOP_K = 5
@@ -157,9 +156,6 @@ accident_collection = client.get_collection(
     ACCIDENT_COLLECTION
 )
 
-law_collection = client.get_collection(
-    LAW_COLLECTION
-)
 
 
 # IMAGE analysis is executed from run_analysis(image_path) below.
@@ -176,23 +172,14 @@ law_collection = client.get_collection(
 accident_docs = None
 accident_meta = None
 accident_bm25 = None
-law_docs = None
-law_meta = None
-law_bm25 = None
 
 
 def build_bm25_corpus():
     global accident_docs
     global accident_meta
     global accident_bm25
-    global law_docs
-    global law_meta
-    global law_bm25
 
-    if (
-        accident_bm25 is not None
-        and law_bm25 is not None
-    ):
+    if accident_bm25 is not None:
         return
 
     print("Loading BM25 corpus...")
@@ -222,41 +209,11 @@ def build_bm25_corpus():
         accident_tokens
     )
 
-    # ---------- Law ----------
-
-    law_data = law_collection.get(
-
-        where={
-            "source": "law"
-        },
-
-        include=[
-            "documents",
-            "metadatas"
-        ]
-    )
-
-    law_docs = law_data["documents"]
-    law_meta = law_data["metadatas"]
-
-    law_tokens = [
-
-        tokenize(doc)
-
-        for doc in law_docs
-
-    ]
-
-    law_bm25 = BM25Okapi(
-        law_tokens
-    )
-
-
 # =====================================================
 # BM25 SEARCH
 # =====================================================
 
-def bm25_search_accident():
+def bm25_search_accident(query):
 
     scores = accident_bm25.get_scores(
         tokenize(query)
@@ -295,44 +252,17 @@ def bm25_search_accident():
     return output
 
 
-def bm25_search_law():
+def bm25_search_law(query):
+    from app.rag.law_rag import search_laws
 
-    scores = law_bm25.get_scores(
-        tokenize(query)
-    )
-
-    ranked = sorted(
-
-        zip(
-            scores,
-            law_docs,
-            law_meta
-        ),
-
-        key=lambda x: x[0],
-
-        reverse=True
-    )
-
-    output = []
-
-    for score, doc, meta in ranked[:BM25_TOP_K]:
-
-        output.append({
-
-            "id":
-                meta["article"],
-
-            "document":
-                doc,
-
-            "metadata":
-                meta
-
-        })
-
-    return output
-
+    return [
+        {
+            "id": article["id"],
+            "document": article["text"],
+            "metadata": article,
+        }
+        for article in search_laws(query, top_k=BM25_TOP_K)
+    ]
 
 
 # =====================================================
@@ -848,14 +778,10 @@ def parse_final_response(response_text):
 
 
 def run_analysis(image_path):
-    global IMAGE_PATH
-    global vision_output
-    global query
-
-    IMAGE_PATH = str(image_path)
+    image_path = str(image_path)
 
     vision_output = analyze_image(
-        IMAGE_PATH
+        image_path
     )
 
     print("\n")
@@ -915,10 +841,10 @@ hazard_keywords:
 
     build_bm25_corpus()
 
-    acc_bm25 = bm25_search_accident()
+    acc_bm25 = bm25_search_accident(query)
 
     acc_rerank = rerank_accident_cases(
-        IMAGE_PATH,
+        image_path,
         vision_output,
         acc_bm25,
     )
@@ -932,10 +858,10 @@ hazard_keywords:
         acc_rerank
     )
 
-    law_bm25 = bm25_search_law()
+    law_bm25 = bm25_search_law(query)
 
     law_rerank = rerank_law_cases(
-        IMAGE_PATH,
+        image_path,
         vision_output,
         law_bm25,
     )
@@ -958,7 +884,7 @@ hazard_keywords:
     )
 
     final_response = generate_final_response(
-        IMAGE_PATH,
+        image_path,
         vision_output,
         context
     )

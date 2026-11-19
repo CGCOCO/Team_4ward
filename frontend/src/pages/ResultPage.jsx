@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, FileText, TriangleAlert, BookOpen, Lightbulb, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, FileText, TriangleAlert, BookOpen, Lightbulb, ChevronDown, ChevronUp, MessageSquareText } from 'lucide-react'
 import Layout from '../components/Layout'
 import { api } from '../api'
 
@@ -132,6 +132,14 @@ export default function ResultPage() {
   const shouldUseStoredImage = Boolean(result?.id && result?.image_url)
   const displayImageUrl = shouldUseStoredImage ? storedImageUrl : previewUrl
   const canDownloadReport = Boolean(result?.id)
+
+  const askAdvisor = () => {
+    const hazardLines = hazards.map((h) => `- ${h.title}${h.desc ? `: ${h.desc}` : ''}`)
+    const context = ['사진 분석으로 발견된 위험요소', ...hazardLines].join('\n')
+    navigate('/advisor', {
+      state: { context, question: '이 현장의 위험요소에 대해 사업주가 지켜야 할 법적 안전조치는 무엇인가요?' },
+    })
+  }
 
   useEffect(() => {
     if (!result?.id || !result?.image_url) return undefined
@@ -368,7 +376,15 @@ export default function ResultPage() {
       </div>
 
       {/* Bottom CTA */}
-      <div className="px-5 pb-4">
+      <div className="px-5 pb-4 flex flex-col gap-2">
+        <button
+          onClick={askAdvisor}
+          disabled={hazards.length === 0}
+          className="w-full border border-blue-600 text-blue-600 font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 text-base active:bg-blue-50 disabled:opacity-45"
+        >
+          <MessageSquareText size={18} />
+          이 현장에 맞는 법령 묻기
+        </button>
         <button
           onClick={downloadReport}
           disabled={!canDownloadReport || isDownloading}
