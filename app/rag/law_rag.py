@@ -1,4 +1,4 @@
-"""Shared search index for the bundled official law snapshot."""
+"""Search the bundled official law snapshots."""
 
 import json
 import re
@@ -11,6 +11,9 @@ LAW_DATA_PATH = (
     Path(__file__).resolve().parents[1]
     / "ai/scripts/forge_db/law/lawData.json"
 )
+ACT_DATA_PATH = LAW_DATA_PATH.with_name("occupationalSafetyAndHealthAct.json")
+ACT_NAME = re.compile(r"산업\s*안전\s*보건\s*법(?!\s*시행(?:령|규칙))|산안법")
+RULE_NAME = re.compile(r"산업\s*안전\s*보건\s*기준\s*에\s*관한\s*규칙|안전보건규칙")
 ARTICLE_REFERENCE = re.compile(r"제\s*(\d+)\s*조(?:\s*의\s*(\d+))?")
 APPENDIX_REFERENCE = re.compile(r"별표\s*(\d+)(?:\s*의\s*(\d+))?")
 EXTERNAL_LAW_SUFFIX = re.compile(r"(?:」|시행령|시행규칙|\b영|\b규칙)\s*$")
@@ -33,8 +36,8 @@ def _original_lines(node, field, children):
             yield from _original_lines(child, text_field, remaining)
 
 
-def _load_articles():
-    law = json.loads(LAW_DATA_PATH.read_text(encoding="utf-8"))["법령"]
+def _load_articles(path):
+    law = json.loads(path.read_text(encoding="utf-8"))["법령"]
     info = law["기본정보"]
     title = info["법령명_한글"]
     version = ",".join(info[key] for key in ("시행일자", "공포번호", "공포일자"))
@@ -102,23 +105,33 @@ def _tokenize(text):
     return tokens
 
 
-_ARTICLES, _APPENDICES = _load_articles()
-_SOURCES = {**_ARTICLES, **{row["id"]: row for row in _APPENDICES.values()}}
+_ARTICLES, _APPENDICES = _load_articles(LAW_DATA_PATH)
+_ACT_ARTICLES, _ = _load_articles(ACT_DATA_PATH)
+_SOURCES = {**_ARTICLES, **_ACT_ARTICLES, **{row["id"]: row for row in _APPENDICES.values()}}
 _LINKS = {key: _linked_appendices(row["text"]) for key, row in _ARTICLES.items()}
 _ROWS = tuple(_ARTICLES.values())
 _APPENDIX_TITLE_TERMS = {
     label: set(_tokenize(row["heading"].split("(")[0]))
     for label, row in _APPENDICES.items()
 }
-_INDEX = BM25Okapi([
-    _tokenize(row["text"] + "\n" + row["heading"])
-    for row in _ROWS
-])
-_REFERENCE_BOOST = 1 + sum(value for value in _INDEX.idf.values() if value > 0)
+_ADVISOR_ROWS = (*_ROWS, *_ACT_ARTICLES.values())
+
+
+def _build_index(rows):
+    return BM25Okapi([_tokenize(row["text"] + "\n" + row["heading"]) for row in rows])
+
+
+_INDEX = _build_index(_ROWS)
+_ADVISOR_INDEX = _build_index(_ADVISOR_ROWS)
+_REFERENCE_BOOST = 1 + sum(value for value in _ADVISOR_INDEX.idf.values() if value > 0)
 
 
 def search_articles(query: str, top_k: int = 6) -> list[dict]:
     """Rank article candidates for the photo analysis pipeline."""
+    return _rank_articles(query, top_k, _ROWS, _INDEX)
+
+
+def _rank_articles(query, top_k, rows, index, act_only=False, rule_only=False):
     if top_k <= 0 or not query.strip():
         return []
     references = {
@@ -126,10 +139,12 @@ def search_articles(query: str, top_k: int = 6) -> list[dict]:
         for number, branch in ARTICLE_REFERENCE.findall(query)
     }
     keywords = list(dict.fromkeys(_tokenize(ARTICLE_REFERENCE.sub(" ", query))))
-    scores = _INDEX.get_scores(keywords)
+    scores = index.get_scores(keywords)
     ranked = [
         (float(score) + (_REFERENCE_BOOST if row["article"] in references else 0), row)
-        for row, score in zip(_ROWS, scores)
+        for row, score in zip(rows, scores)
+        if not act_only or row["id"] in _ACT_ARTICLES
+        if not rule_only or row["id"] in _ARTICLES
         if score > 0 or row["article"] in references
     ]
     ranked.sort(key=lambda match: match[0], reverse=True)
@@ -140,23 +155,30 @@ def search_laws(query: str, top_k: int = 6) -> list[dict]:
     """Find articles and include appendices that support the answer."""
     if top_k <= 0:
         return []
+    mentions_act = bool(ACT_NAME.search(query))
+    mentions_rule = bool(RULE_NAME.search(query))
+    act_only = mentions_act and not mentions_rule
+    rule_only = mentions_rule and not mentions_act
     requested = dict.fromkeys(
         _appendix_label(number, branch)
         for number, branch in APPENDIX_REFERENCE.findall(query)
     )
     results = [
         {**_APPENDICES[label], "score": float(_REFERENCE_BOOST * 2)}
-        for label in requested if label in _APPENDICES
+        for label in requested if label in _APPENDICES and not act_only
     ]
     article_query = APPENDIX_REFERENCE.sub(" ", query)
-    articles = search_articles(article_query, top_k)
+    article_query = ACT_NAME.sub(" ", RULE_NAME.sub(" ", article_query))
+    articles = _rank_articles(
+        article_query, top_k, _ADVISOR_ROWS, _ADVISOR_INDEX,
+        act_only=act_only, rule_only=rule_only,
+    )
     query_terms = set(_tokenize(article_query))
-    # Leave room for ranked articles while supplying one contextual appendix
-    # when the question does not name a table.
-    include_linked = not requested and top_k > 1
+    # Expand rule appendices only when the rule leads the article results.
+    include_linked = not requested and articles and articles[0]["id"] in _ARTICLES
     for article in articles:
         results.append(article)
-        links = _LINKS[article["id"]]
+        links = _LINKS.get(article["id"], ())
         if include_linked and links and len(results) < top_k:
             label = max(links, key=lambda link: len(_APPENDIX_TITLE_TERMS[link] & query_terms))
             results.append({**_APPENDICES[label], "score": article["score"]})
