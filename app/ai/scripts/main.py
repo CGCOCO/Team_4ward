@@ -761,7 +761,7 @@ def parse_final_response(response_text):
     )
 
 
-def run_analysis(image_path):
+def run_analysis(image_path, *, retrieval_trace=None):
     image_path = str(image_path)
 
     vision_output = analyze_image(
@@ -849,6 +849,10 @@ hazard_keywords:
         vision_output,
         law_bm25,
     )
+
+    if retrieval_trace is not None:
+        retrieval_trace["candidates"] = [item["id"] for item in law_bm25]
+        retrieval_trace["reranked"] = [item["id"] for item in law_rerank]
 
     print_results(
         "LAW - BM25",
