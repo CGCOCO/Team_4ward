@@ -171,15 +171,15 @@ def _format_law(article: str, content: str) -> tuple[str, str]:
     article_text = _clean_text(article)
     content_text = _clean_text(content)
     article_match = re.match(
-        r"^(?:산업안전보건(?:기준에 관한 )?규칙\s*)?(제\s*\d+조)(?:\(([^)]+)\))?",
+        r"^(?:산업안전보건(?:기준에 관한 )?규칙\s*)?(제\s*\d+\s*조(?:\s*의\s*\d+)?)(?:\s*\(([^)]+)\))?",
         article_text,
     )
-    content_title_match = re.match(r"^제\s*\d+조\(([^)]+)\)", content_text)
+    content_title_match = re.match(r"^제\s*\d+\s*조(?:\s*의\s*\d+)?\s*\(([^)]+)\)", content_text)
 
     if not article_match:
         return article_text, content_title_match.group(1) if content_title_match else ""
 
-    article_number = article_match.group(1).replace(" ", "")
+    article_number = "".join(article_match.group(1).split())
     subtitle = article_match.group(2) or (content_title_match.group(1) if content_title_match else "")
     return f"산업안전보건규칙 {article_number}", subtitle
 
