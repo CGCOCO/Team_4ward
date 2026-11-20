@@ -137,7 +137,7 @@ export default function ResultPage() {
     const hazardLines = hazards.map((h) => `- ${h.title}${h.desc ? `: ${h.desc}` : ''}`)
     const context = ['사진 분석으로 발견된 위험요소', ...hazardLines].join('\n')
     navigate('/advisor', {
-      state: { context, question: '이 현장의 위험요소에 대해 사업주가 지켜야 할 법적 안전조치는 무엇인가요?' },
+      state: { from: 'result', context, question: '이 현장의 위험요소에 대해 사업주가 지켜야 할 법적 안전조치는 무엇인가요?' },
     })
   }
 
