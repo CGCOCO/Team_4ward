@@ -136,12 +136,9 @@ export default function ResultPage() {
   const askAdvisor = () => {
     const hazardLines = hazards.map((h) => `- ${h.title}${h.desc ? `: ${h.desc}` : ''}`)
     const context = ['사진 분석으로 발견된 위험요소', ...hazardLines].join('\n')
-    // 새 분석 직후에는 고정 질문을 자동 전송하고, 이력에서 다시 연 결과는 추천 질문만 보여준다
-    const question = from === 'history'
-      ? undefined
-      : '이 현장의 위험요소에 대해 사업주가 지켜야 할 법적 안전조치는 무엇인가요?'
+    // 질문은 자동 전송하지 않고, AI 도우미 화면에서 분석 결과용 추천 질문을 고르게 한다
     navigate('/advisor', {
-      state: { from: 'result', context, question },
+      state: { from: 'result', context },
     })
   }
 
@@ -387,7 +384,7 @@ export default function ResultPage() {
           className="w-full border border-blue-600 text-blue-600 font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 text-base active:bg-blue-50 disabled:opacity-45"
         >
           <MessageSquareText size={18} />
-          이 현장에 맞는 법령 묻기
+          AI 도우미에게 물어보기
         </button>
         <button
           onClick={downloadReport}

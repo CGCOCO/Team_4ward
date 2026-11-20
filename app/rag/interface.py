@@ -1,5 +1,5 @@
 """
-AI 어드바이저 <-> 법령 RAG 인터페이스 (계약)
+AI 도우미 <-> 법령 RAG 인터페이스 (계약)
 
 RAG 담당은 아래 두 함수를 가진 모듈을 구현하고, 환경변수 RAG_BACKEND 로 선택한다.
   - RAG_BACKEND=mock (기본값) : app.rag.mock_rag

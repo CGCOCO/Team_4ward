@@ -125,7 +125,7 @@ function AssistantMessage({ message, onCite, onAsk }) {
         <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
           <Scale size={15} className="text-white" />
         </div>
-        <span className="text-xs font-semibold text-slate-500">AI 어드바이저</span>
+        <span className="text-xs font-semibold text-slate-500">AI 도우미</span>
       </div>
 
       {message.content ? (
@@ -251,7 +251,7 @@ export default function AdvisorPage() {
 
   const backToResult = () => {
     abortRef.current?.abort()
-    // 히스토리의 결과 화면(state 포함)으로 복귀 — push 하면 결과↔어드바이저 루프가 쌓인다
+    // 히스토리의 결과 화면(state 포함)으로 복귀 — push 하면 결과↔AI 도우미 루프가 쌓인다
     navigate(-1)
   }
 
@@ -360,7 +360,7 @@ export default function AdvisorPage() {
               <ArrowLeft size={22} />
             </button>
           ) : null}
-          <h1 className="text-lg font-bold text-slate-900">AI 어드바이저</h1>
+          <h1 className="text-lg font-bold text-slate-900">AI 도우미</h1>
         </div>
         <div className="flex items-center gap-1">
           <button onClick={() => setShowSessions(true)} className="p-2 text-slate-500" aria-label="이전 상담">
@@ -379,7 +379,7 @@ export default function AdvisorPage() {
               <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center">
                 <Scale size={26} className="text-white" />
               </div>
-              <p className="text-base font-bold text-slate-900">산업안전보건 법령 어드바이저</p>
+              <p className="text-base font-bold text-slate-900">산업안전보건 법령 도우미</p>
               <p className="text-sm text-slate-500 leading-relaxed">
                 궁금한 안전보건 의무와 기준을 물어보세요.<br />
                 관련 법령 조문을 근거로 답해 드립니다.

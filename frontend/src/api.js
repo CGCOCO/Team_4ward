@@ -27,7 +27,7 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// AI 어드바이저 SSE 스트림: onEvent(eventName, data) 로 progress/sources/delta/done/error 전달
+// AI 도우미 SSE 스트림: onEvent(eventName, data) 로 progress/sources/delta/done/error 전달
 export async function streamAdvisorChat(body, onEvent, signal) {
   const token = getToken()
   const response = await fetch(`${API_BASE_URL}/api/v1/advisor/chat`, {
