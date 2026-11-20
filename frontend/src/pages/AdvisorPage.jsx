@@ -232,7 +232,6 @@ export default function AdvisorPage() {
   const [context, setContext] = useState(location.state?.context ?? null)
   const bottomRef = useRef(null)
   const abortRef = useRef(null)
-  const initialQuestionSent = useRef(false)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -296,10 +295,11 @@ export default function AdvisorPage() {
 
   useEffect(() => {
     const initialQuestion = location.state?.question
-    if (initialQuestion && !initialQuestionSent.current) {
-      initialQuestionSent.current = true
-      ask(initialQuestion)
-    }
+    if (!initialQuestion) return undefined
+    // StrictMode(개발)의 마운트→언마운트→재마운트에서 첫 요청이 abort 되지 않도록,
+    // 실제로 남아 있는 마운트에서만 한 번 전송한다.
+    const timer = setTimeout(() => ask(initialQuestion), 0)
+    return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
