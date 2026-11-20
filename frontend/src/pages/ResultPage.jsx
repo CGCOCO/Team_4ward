@@ -92,8 +92,8 @@ function normalizeLaw(law, index) {
 function formatLawTitle(article, content) {
   const articleText = String(article || '').trim()
   const contentText = String(content || '').trim()
-  const articleMatch = articleText.match(/^(?:산업안전보건(?:기준에 관한 )?규칙\s*)?(제\s*\d+조)(?:\(([^)]+)\))?/)
-  const contentTitleMatch = contentText.match(/^제\s*\d+조\(([^)]+)\)/)
+  const articleMatch = articleText.match(/^(?:산업안전보건(?:기준에 관한 )?규칙\s*)?(제\s*\d+\s*조(?:\s*의\s*\d+)?)(?:\s*\(([^)]+)\))?/)
+  const contentTitleMatch = contentText.match(/^제\s*\d+\s*조(?:\s*의\s*\d+)?\s*\(([^)]+)\)/)
 
   if (!articleMatch) {
     return {
