@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, BookOpen, ExternalLink, History, Loader2, Plus, Scale, Send, X } from 'lucide-react'
+import { ArrowLeft, BookOpen, ExternalLink, History, Loader2, Scale, Send, X } from 'lucide-react'
 import Layout from '../components/Layout'
 import { api, clearToken, streamAdvisorChat } from '../api'
 
@@ -325,13 +325,6 @@ export default function AdvisorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const startNewChat = () => {
-    abortRef.current?.abort()
-    setMessages([])
-    setSessionId(null)
-    setContext(null)
-  }
-
   const loadSession = async (id) => {
     setShowSessions(false)
     abortRef.current?.abort()
@@ -362,14 +355,9 @@ export default function AdvisorPage() {
           ) : null}
           <h1 className="text-lg font-bold text-slate-900">AI 도우미</h1>
         </div>
-        <div className="flex items-center gap-1">
-          <button onClick={() => setShowSessions(true)} className="p-2 text-slate-500" aria-label="이전 상담">
-            <History size={20} />
-          </button>
-          <button onClick={startNewChat} className="p-2 text-slate-500" aria-label="새 상담">
-            <Plus size={20} />
-          </button>
-        </div>
+        <button onClick={() => setShowSessions(true)} className="p-2 -mr-2 text-slate-500" aria-label="이전 상담">
+          <History size={20} />
+        </button>
       </header>
 
       <div className="flex-1 flex flex-col gap-6 px-5 pt-5 pb-24">
