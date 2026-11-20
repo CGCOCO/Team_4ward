@@ -415,7 +415,7 @@ export default function AdvisorPage() {
         <input
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          placeholder="안전보건 법령에 대해 질문하세요"
+          placeholder="궁금한 점을 AI 도우미에게 질문하세요"
           className="flex-1 bg-slate-100 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
         />
         <button
