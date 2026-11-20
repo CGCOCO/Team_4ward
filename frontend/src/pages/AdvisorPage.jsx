@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, BookOpen, ExternalLink, History, Loader2, Plus, Scale, Send, X } from 'lucide-react'
+import { ArrowLeft, BookOpen, ExternalLink, History, Loader2, Scale, Send, X } from 'lucide-react'
 import Layout from '../components/Layout'
 import { api, clearToken, streamAdvisorChat } from '../api'
 
@@ -125,7 +125,7 @@ function AssistantMessage({ message, onCite, onAsk }) {
         <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
           <Scale size={15} className="text-white" />
         </div>
-        <span className="text-xs font-semibold text-slate-500">AI 어드바이저</span>
+        <span className="text-xs font-semibold text-slate-500">AI 도우미</span>
       </div>
 
       {message.content ? (
@@ -251,7 +251,7 @@ export default function AdvisorPage() {
 
   const backToResult = () => {
     abortRef.current?.abort()
-    // 히스토리의 결과 화면(state 포함)으로 복귀 — push 하면 결과↔어드바이저 루프가 쌓인다
+    // 히스토리의 결과 화면(state 포함)으로 복귀 — push 하면 결과↔AI 도우미 루프가 쌓인다
     navigate(-1)
   }
 
@@ -325,13 +325,6 @@ export default function AdvisorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const startNewChat = () => {
-    abortRef.current?.abort()
-    setMessages([])
-    setSessionId(null)
-    setContext(null)
-  }
-
   const loadSession = async (id) => {
     setShowSessions(false)
     abortRef.current?.abort()
@@ -360,16 +353,11 @@ export default function AdvisorPage() {
               <ArrowLeft size={22} />
             </button>
           ) : null}
-          <h1 className="text-lg font-bold text-slate-900">AI 어드바이저</h1>
+          <h1 className="text-lg font-bold text-slate-900">AI 도우미</h1>
         </div>
-        <div className="flex items-center gap-1">
-          <button onClick={() => setShowSessions(true)} className="p-2 text-slate-500" aria-label="이전 상담">
-            <History size={20} />
-          </button>
-          <button onClick={startNewChat} className="p-2 text-slate-500" aria-label="새 상담">
-            <Plus size={20} />
-          </button>
-        </div>
+        <button onClick={() => setShowSessions(true)} className="p-2 -mr-2 text-slate-500" aria-label="이전 상담">
+          <History size={20} />
+        </button>
       </header>
 
       <div className="flex-1 flex flex-col gap-6 px-5 pt-5 pb-24">
@@ -379,7 +367,7 @@ export default function AdvisorPage() {
               <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center">
                 <Scale size={26} className="text-white" />
               </div>
-              <p className="text-base font-bold text-slate-900">산업안전보건 법령 어드바이저</p>
+              <p className="text-base font-bold text-slate-900">AI 도우미</p>
               <p className="text-sm text-slate-500 leading-relaxed">
                 궁금한 안전보건 의무와 기준을 물어보세요.<br />
                 관련 법령 조문을 근거로 답해 드립니다.
@@ -427,7 +415,7 @@ export default function AdvisorPage() {
         <input
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          placeholder="안전보건 법령에 대해 질문하세요"
+          placeholder="궁금한 점을 AI 도우미에게 질문하세요"
           className="flex-1 bg-slate-100 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
         />
         <button

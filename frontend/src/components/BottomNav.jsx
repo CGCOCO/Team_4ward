@@ -3,7 +3,7 @@ import { Home, MessageSquareText, FileText, Settings } from 'lucide-react'
 
 const tabs = [
   { path: '/', label: '홈', icon: Home },
-  { path: '/advisor', label: 'AI 어드바이저', icon: MessageSquareText },
+  { path: '/advisor', label: 'AI 도우미', icon: MessageSquareText },
   { path: '/history', label: '이력', icon: FileText },
   { path: '/admin', label: '관리', icon: Settings },
 ]

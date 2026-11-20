@@ -73,7 +73,7 @@ export default function HomePage() {
         <div className="w-24 h-24 rounded-[28px] bg-blue-100 flex items-center justify-center mb-5">
           <Shield size={44} className="text-blue-600" />
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 text-center mb-2">AI Safety Inspector</h1>
+        <h1 className="text-2xl font-bold text-slate-900 text-center mb-2">Safe-Guard AI</h1>
         <p className="text-sm text-slate-500 text-center mb-8">
           사진 한 장으로 위험 요소를 자동 분석하세요
         </p>
