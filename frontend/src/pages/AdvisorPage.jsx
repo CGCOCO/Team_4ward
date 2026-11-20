@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BookOpen, ExternalLink, History, Loader2, Plus, Scale, Send, X } from 'lucide-react'
+import { ArrowLeft, BookOpen, ExternalLink, History, Loader2, Plus, Scale, Send, X } from 'lucide-react'
 import Layout from '../components/Layout'
 import { api, clearToken, streamAdvisorChat } from '../api'
 
@@ -232,7 +232,14 @@ export default function AdvisorPage() {
   const [context, setContext] = useState(location.state?.context ?? null)
   const bottomRef = useRef(null)
   const abortRef = useRef(null)
-  const initialQuestionSent = useRef(false)
+  // 분석 결과에서 들어온 경우에만 결과 화면으로 돌아가는 버튼을 보여준다
+  const cameFromResult = location.state?.from === 'result'
+
+  const backToResult = () => {
+    abortRef.current?.abort()
+    // 히스토리의 결과 화면(state 포함)으로 복귀 — push 하면 결과↔어드바이저 루프가 쌓인다
+    navigate(-1)
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -296,10 +303,11 @@ export default function AdvisorPage() {
 
   useEffect(() => {
     const initialQuestion = location.state?.question
-    if (initialQuestion && !initialQuestionSent.current) {
-      initialQuestionSent.current = true
-      ask(initialQuestion)
-    }
+    if (!initialQuestion) return undefined
+    // StrictMode(개발)의 마운트→언마운트→재마운트에서 첫 요청이 abort 되지 않도록,
+    // 실제로 남아 있는 마운트에서만 한 번 전송한다.
+    const timer = setTimeout(() => ask(initialQuestion), 0)
+    return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -332,7 +340,14 @@ export default function AdvisorPage() {
   return (
     <Layout>
       <header className="sticky top-0 z-10 bg-white flex items-center justify-between px-5 pt-10 pb-4 border-b border-slate-100">
-        <h1 className="text-lg font-bold text-slate-900">AI 어드바이저</h1>
+        <div className="flex items-center gap-3">
+          {cameFromResult ? (
+            <button onClick={backToResult} className="text-slate-500" aria-label="분석 결과로 돌아가기">
+              <ArrowLeft size={22} />
+            </button>
+          ) : null}
+          <h1 className="text-lg font-bold text-slate-900">AI 어드바이저</h1>
+        </div>
         <div className="flex items-center gap-1">
           <button onClick={() => setShowSessions(true)} className="p-2 text-slate-500" aria-label="이전 상담">
             <History size={20} />
