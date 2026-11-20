@@ -136,8 +136,12 @@ export default function ResultPage() {
   const askAdvisor = () => {
     const hazardLines = hazards.map((h) => `- ${h.title}${h.desc ? `: ${h.desc}` : ''}`)
     const context = ['사진 분석으로 발견된 위험요소', ...hazardLines].join('\n')
+    // 새 분석 직후에는 고정 질문을 자동 전송하고, 이력에서 다시 연 결과는 추천 질문만 보여준다
+    const question = from === 'history'
+      ? undefined
+      : '이 현장의 위험요소에 대해 사업주가 지켜야 할 법적 안전조치는 무엇인가요?'
     navigate('/advisor', {
-      state: { from: 'result', context, question: '이 현장의 위험요소에 대해 사업주가 지켜야 할 법적 안전조치는 무엇인가요?' },
+      state: { from: 'result', context, question },
     })
   }
 
