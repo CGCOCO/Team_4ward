@@ -14,7 +14,7 @@ from app.rag.interface import LawArticle, get_rag
 
 
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "kun-kgp-mytnt831")
-MODEL = os.getenv("ADVISOR_MODEL", "gemini-3.5-flash")
+MODEL = os.getenv("ADVISOR_MODEL", "gemini-4-hydrogen")
 TOP_K = 6
 HISTORY_TURNS = 6  # 질의 재작성·답변에 넘길 최근 메시지 수
 _CLIENT_LOCK = Lock()
@@ -190,7 +190,7 @@ def rewrite_query(history: list[dict], message: str, context: str | None = None)
         contents=REWRITE_PROMPT.format(
             history=_format_history(history), context=situation, message=message
         ),
-        config=_config(temperature=0),
+        config=_config(),
     )
     return (response.text or "").strip() or fallback
 
@@ -234,7 +234,7 @@ def suggest_followups(question: str, answer: str) -> list[str]:
         response = _client().models.generate_content(
             model=MODEL,
             contents=FOLLOWUP_PROMPT.format(question=question, answer=answer[:1500]),
-            config=_config(temperature=0.4, response_mime_type="application/json"),
+            config=_config(response_mime_type="application/json"),
         )
         items = json.loads(response.text or "[]")
         return [str(item) for item in items if item][:3]
@@ -276,7 +276,7 @@ def stream_chat(
         stream = _client().models.generate_content_stream(
             model=MODEL,
             contents=_build_contents(history, message, sources, context),
-            config=_config(system_instruction=ANSWER_SYSTEM_PROMPT, temperature=0.2),
+            config=_config(system_instruction=ANSWER_SYSTEM_PROMPT),
         )
         for chunk in stream:
             if chunk.text:

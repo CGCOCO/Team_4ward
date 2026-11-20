@@ -121,7 +121,7 @@ def analyze_image(image_path):
 
     response = vision_client.models.generate_content(
 
-        model="gemini-3.5-flash",
+        model="gemini-4-hydrogen",
 
         contents=[
 
@@ -134,7 +134,7 @@ def analyze_image(image_path):
         ],
 
         config=types.GenerateContentConfig(
-            temperature=0.0,
+            thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW),
             response_mime_type="application/json"
         )
     )
@@ -341,7 +341,7 @@ def rerank_accident_cases(
 
     response = vision_client.models.generate_content(
 
-        model="gemini-3.5-flash",
+        model="gemini-4-hydrogen",
 
         contents=[ 
             prompt,
@@ -352,7 +352,7 @@ def rerank_accident_cases(
         ],
 
         config=types.GenerateContentConfig(
-            temperature=0.0,
+            thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW),
             response_mime_type="application/json"
         )
     )
@@ -477,7 +477,7 @@ def rerank_law_cases(
 
     response = vision_client.models.generate_content(
 
-        model="gemini-3.5-flash",
+        model="gemini-4-hydrogen",
 
         contents=[ 
             prompt,
@@ -487,7 +487,7 @@ def rerank_law_cases(
             )
         ],
         config=types.GenerateContentConfig(
-            temperature=0.0,
+            thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW),
             response_mime_type="application/json"
         )
     )
@@ -736,7 +736,7 @@ TASK
 
     response = multimodal_client.models.generate_content(
 
-        model="gemini-3.1-pro-preview",
+        model="gemini-4-carbon",
 
         contents=[
             prompt,
@@ -747,7 +747,6 @@ TASK
         ],
 
         config=types.GenerateContentConfig(
-            temperature=0.0,
             response_mime_type="application/json"
         )
     )

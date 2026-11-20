@@ -10,7 +10,7 @@
 python -m app.ai.evaluate cases.json --output evaluation.json
 ```
 
-기본 평가 모델은 `gemini-3.1-pro-preview`이며 `--model` 또는 `EVALUATION_MODEL`로 바꿀 수 있습니다. `--project`로 테스트용 GCP 프로젝트를 지정할 수 있습니다. 결과 파일은 각 사례가 끝날 때마다 갱신됩니다. 실패 사례는 이유와 함께 남고 종료 코드는 1입니다.
+기본 평가 모델은 `gemini-4-neon`이며 `--model` 또는 `EVALUATION_MODEL`로 바꿀 수 있습니다. `--project`로 테스트용 GCP 프로젝트를 지정할 수 있습니다. 결과 파일은 각 사례가 끝날 때마다 갱신됩니다. 실패 사례는 이유와 함께 남고 종료 코드는 1입니다.
 
 ## 평가 입력
 

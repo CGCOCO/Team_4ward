@@ -73,7 +73,7 @@ Risk Analysis Report
 
 ### 2. Hazard Extraction
 
-- Gemini 3.5 Flash 활용
+- Gemini 4 Hydrogen 활용
 - 위험요소 키워드 생성
 - 작업 환경 설명 생성
 
@@ -112,7 +112,7 @@ Risk Analysis Report
 
 ### 5. Multimodal Risk Analysis
 
-Gemini 3.1 Pro Preview 기반 멀티모달 추론 수행
+Gemini 4 Carbon 기반 멀티모달 추론 수행
 
 #### Inputs
 
@@ -187,7 +187,7 @@ Gemini 3.1 Pro Preview 기반 멀티모달 추론 수행
 
 ### Vision
 
-- Gemini 3.5 Flash
+- Gemini 4 Hydrogen
 - YOLO
 - OpenCV
 
@@ -199,7 +199,7 @@ Gemini 3.1 Pro Preview 기반 멀티모달 추론 수행
 
 ### Multimodal Reasoning
 
-- Gemini 3.1 Pro Preview
+- Gemini 4 Carbon
 
 ### Cloud
 

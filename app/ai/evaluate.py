@@ -326,7 +326,6 @@ def evaluate_case(case, folder, client, model, generate_missing, *, score=False)
             system_instruction=_judge_prompt(score),
             response_mime_type="application/json",
             response_schema=schema,
-            temperature=0,
         ),
     )
     judgment = schema.model_validate_json(response.text or "")
@@ -415,7 +414,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("manifest", type=Path)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--model", default=os.getenv("EVALUATION_MODEL", "gemini-3.1-pro-preview"))
+    parser.add_argument("--model", default=os.getenv("EVALUATION_MODEL", "gemini-4-neon"))
     parser.add_argument("--project", default=os.getenv("GOOGLE_CLOUD_PROJECT", "kun-kgp-mytnt831"))
     parser.add_argument("--generate-missing", action="store_true")
     parser.add_argument("--score", action="store_true", help="Add four 1–5 rubric ratings per photo")
