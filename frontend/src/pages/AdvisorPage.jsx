@@ -12,6 +12,13 @@ const SUGGESTED_QUESTIONS = [
   '지게차 작업 시 지켜야 할 안전조치는?',
 ]
 
+// 사진 분석 결과(context)를 가지고 들어왔을 때 보여줄 추천 질문
+const CONTEXT_SUGGESTED_QUESTIONS = [
+  '이 현장의 위험요소에 대해 사업주가 지켜야 할 법적 안전조치는 무엇인가요?',
+  '이 작업 전 필요한 안전보건교육은 무엇인가요?',
+  '이 현장에서 지급·착용해야 할 보호구는 무엇인가요?',
+]
+
 function citedNumbers(text, sources) {
   const numbers = new Set([...String(text).matchAll(/\[(\d+)\]/g)].map((match) => Number(match[1])))
   return sources.filter((source) => numbers.has(source.n)).map((source) => source.n)
@@ -92,6 +99,23 @@ function SourceCard({ source, onOpen }) {
   )
 }
 
+// 꼬리 질문·분석 결과 추천 질문에 함께 쓰는 칩 형태 질문 버튼
+function QuestionChips({ questions, onAsk, className = '' }) {
+  return (
+    <div className={`flex flex-col gap-2 ${className}`}>
+      {questions.map((question) => (
+        <button
+          key={question}
+          onClick={() => onAsk(question)}
+          className="self-start text-left text-sm text-blue-700 bg-blue-50 border border-blue-100 rounded-full px-4 py-2 active:bg-blue-100"
+        >
+          {question}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function AssistantMessage({ message, onCite, onAsk }) {
   const citedSources = message.sources.filter((source) => message.cited?.includes(source.n))
 
@@ -129,17 +153,7 @@ function AssistantMessage({ message, onCite, onAsk }) {
       ) : null}
 
       {message.followups?.length > 0 ? (
-        <div className="flex flex-col gap-1.5 mt-1">
-          {message.followups.map((question) => (
-            <button
-              key={question}
-              onClick={() => onAsk(question)}
-              className="self-start text-left text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-full px-3 py-1.5 active:bg-blue-100"
-            >
-              {question}
-            </button>
-          ))}
-        </div>
+        <QuestionChips questions={message.followups} onAsk={onAsk} className="mt-1" />
       ) : null}
     </div>
   )
@@ -378,7 +392,9 @@ export default function AdvisorPage() {
             ) : null}
             <div className="flex flex-col gap-2">
               <p className="text-xs font-semibold text-slate-500">이런 질문을 해보세요</p>
-              {SUGGESTED_QUESTIONS.map((question) => (
+              {context ? (
+                <QuestionChips questions={CONTEXT_SUGGESTED_QUESTIONS} onAsk={ask} />
+              ) : SUGGESTED_QUESTIONS.map((question) => (
                 <button
                   key={question}
                   onClick={() => ask(question)}
