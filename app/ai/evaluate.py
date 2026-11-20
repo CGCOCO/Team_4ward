@@ -11,15 +11,17 @@ import tempfile
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
+from statistics import mean
 from typing import Literal
 
 from google import genai
 from google.genai import types
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, TypeAdapter, field_validator
 
 from app.rag.law_rag import get_article
 
 METHOD_VERSION = "photo-safety-eval-v1"
+RUBRIC_VERSION = "photo-safety-1to5-v1"
 RULE_ARTICLE = re.compile(
     r"^(?:산업안전보건(?:기준에\s*관한\s*)?규칙\s*)?"
     r"제\s*(\d+)\s*조(?:\s*의\s*(\d+))?(?=\s|\(|$)"
@@ -56,6 +58,28 @@ covered이면 매칭된 hazards 항목의 ID를 모두, missed와 not_verifiable
 빈 리스트를 반환한다. 명시된 위험과 같은 의미도 인정한다. 위험 자체가
 언급됐다면, 그 항목의 부가 설명에 근거 없는 단정이 있어도 coverage는
 covered로 기록하고 부가 설명의 오류는 checks에서 따로 판정한다.
+""".strip()
+
+RATING_PROMPT = """
+기존 항목별 판정에 추가하여, 서비스가 생성한 결과 전체에 대해 아래 네
+항목의 점수를 각각 정수 1~5로 채점한다. 항목마다 사진, 분석 결과 또는
+공식 원문에서 판단에 사용한 근거와 가장 중요한 누락이나 오류를 reason에
+한국어로 간단히 적는다.
+
+hazard (위험요소 탐지 정확성): 사진에서 관찰되거나 합리적으로 추론되는
+핵심 위험을 짚었는지, 중요한 위험을 빠뜨렸거나 사실을 단정했는지 본다.
+accident (아차사고 시나리오 적절성): 감지한 위험에서 이어질 수 있는
+사고 과정이 사진의 상황에서 구체적이고 개연성이 있는지 본다.
+prevention (예방대책 적절성): 위험과 직접 연결되는 구체적이고 실행
+가능한 대책인지, 권고가 추가 위험을 만드는지 본다.
+law (법령 적합성): 인용 조문의 공식 원문과 설명이 맞는지, 현장 위험과
+관련이 있는지, 확인된 사실과 법령 적용 조건을 구분했는지 본다.
+
+5점 매우 적절함: 핵심 내용을 충족하고 중요한 누락이나 오류가 없다.
+4점 적절함: 핵심 내용을 충족하고 경미한 보완이 필요하다.
+3점 보통: 타당한 내용이 있으나 중요한 보완이 필요하다.
+2점 부적절함: 핵심 판단에 큰 오류나 누락이 있다.
+1점 매우 부적절함: 평가할 결과가 없거나, 대부분 부적절하거나, 중대한 오류가 있다.
 """.strip()
 
 
@@ -113,6 +137,42 @@ class HazardCoverage(BaseModel):
 class Judgment(BaseModel):
     checks: list[ClaimCheck]
     coverage: list[HazardCoverage]
+
+
+class Rating(BaseModel):
+    score: StrictInt
+    reason: str
+
+    @field_validator("score")
+    @classmethod
+    def check_range(cls, score: int) -> int:
+        if not 1 <= score <= 5:
+            raise ValueError("Score must be between 1 and 5")
+        return score
+
+    @field_validator("reason")
+    @classmethod
+    def check_reason(cls, reason: str) -> str:
+        if not reason.strip():
+            raise ValueError("Rating reason is required")
+        return reason
+
+
+class Ratings(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    hazard: Rating
+    accident: Rating
+    prevention: Rating
+    law: Rating
+
+
+class ScoredJudgment(Judgment):
+    ratings: Ratings
+
+
+def _judge_prompt(score: bool) -> str:
+    return f"{JUDGE_PROMPT}\n\n{RATING_PROMPT}" if score else JUDGE_PROMPT
 
 
 def _digest(value: bytes) -> str:
@@ -235,7 +295,7 @@ def _count_metrics(case, items, expected, judgment, findings, trace):
     return metrics, critical_misses, critical_findings
 
 
-def evaluate_case(case, folder, client, model, generate_missing):
+def evaluate_case(case, folder, client, model, generate_missing, *, score=False):
     image_path = folder / case.image
     mime_type, _ = mimetypes.guess_type(image_path)
     if mime_type not in {"image/jpeg", "image/png", "image/webp"}:
@@ -255,6 +315,7 @@ def evaluate_case(case, folder, client, model, generate_missing):
         "benchmark_reference_ids": sorted(set(case.reference_ids) | set(case.expected_law_ids)),
         "sources": list(sources.values()),
     }
+    schema = ScoredJudgment if score else Judgment
     response = client.models.generate_content(
         model=model,
         contents=[
@@ -262,13 +323,13 @@ def evaluate_case(case, folder, client, model, generate_missing):
             json.dumps(payload, ensure_ascii=False),
         ],
         config=types.GenerateContentConfig(
-            system_instruction=JUDGE_PROMPT,
+            system_instruction=_judge_prompt(score),
             response_mime_type="application/json",
-            response_schema=Judgment,
+            response_schema=schema,
             temperature=0,
         ),
     )
-    judgment = Judgment.model_validate_json(response.text or "")
+    judgment = schema.model_validate_json(response.text or "")
     findings = _validate_judgment(judgment, items, expected, sources)
     metrics, critical_misses, critical_findings = _count_metrics(
         case, items, expected, judgment, findings, trace
@@ -282,6 +343,7 @@ def evaluate_case(case, folder, client, model, generate_missing):
         "case_id": case.id,
         "image_sha256": _digest(image),
         "analysis": result.model_dump(),
+        **({"ratings": judgment.ratings.model_dump()} if isinstance(judgment, ScoredJudgment) else {}),
         "evaluation_input_sha256": _digest(json.dumps(payload, ensure_ascii=False).encode()),
         "expected_hazards": list(expected.values()),
         "unverifiable_facts": case.unverifiable_facts,
@@ -316,12 +378,19 @@ def _summary(rows):
             total["total"] += metric["total"]
     for metric in totals.values():
         metric["rate"] = metric["count"] / metric["total"] if metric["total"] else None
-    return {
+    summary = {
         "completed": sum("error" not in row for row in rows),
         "failed": sum("error" in row for row in rows),
         "needs_review": sum(bool(row.get("needs_review")) for row in rows),
         "metrics": totals,
     }
+    rated = [row["ratings"] for row in rows if "ratings" in row]
+    if rated:
+        summary["ratings"] = {
+            name: {"mean": mean(scores[name]["score"] for scores in rated), "count": len(rated)}
+            for name in Ratings.model_fields
+        }
+    return summary
 
 
 def _write_report(path, report):
@@ -349,6 +418,7 @@ def main():
     parser.add_argument("--model", default=os.getenv("EVALUATION_MODEL", "gemini-3.1-pro-preview"))
     parser.add_argument("--project", default=os.getenv("GOOGLE_CLOUD_PROJECT", "kun-kgp-mytnt831"))
     parser.add_argument("--generate-missing", action="store_true")
+    parser.add_argument("--score", action="store_true", help="Add four 1–5 rubric ratings per photo")
     args = parser.parse_args()
     if args.output.exists():
         parser.error("--output must be a new file")
@@ -363,15 +433,19 @@ def main():
     report = {
         "method_version": METHOD_VERSION,
         "judge_model": args.model,
-        "prompt_sha256": _digest(JUDGE_PROMPT.encode()),
+        "prompt_sha256": _digest(_judge_prompt(args.score).encode()),
         "manifest_sha256": _digest(manifest),
         "created_at": datetime.now(timezone.utc).isoformat(),
         "cases": [],
     }
+    if args.score:
+        report["rubric_version"] = RUBRIC_VERSION
     try:
         for case in cases:
             try:
-                row = evaluate_case(case, args.manifest.parent, client, args.model, args.generate_missing)
+                row = evaluate_case(
+                    case, args.manifest.parent, client, args.model, args.generate_missing, score=args.score
+                )
             except Exception as exc:
                 row = {"case_id": case.id, "error": str(exc)}
                 print(f"{case.id}: evaluation failed: {exc}", file=sys.stderr)
