@@ -99,6 +99,23 @@ function SourceCard({ source, onOpen }) {
   )
 }
 
+// 꼬리 질문·분석 결과 추천 질문에 함께 쓰는 칩 형태 질문 버튼
+function QuestionChips({ questions, onAsk, className = '' }) {
+  return (
+    <div className={`flex flex-col gap-1.5 ${className}`}>
+      {questions.map((question) => (
+        <button
+          key={question}
+          onClick={() => onAsk(question)}
+          className="self-start text-left text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-full px-3 py-1.5 active:bg-blue-100"
+        >
+          {question}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function AssistantMessage({ message, onCite, onAsk }) {
   const citedSources = message.sources.filter((source) => message.cited?.includes(source.n))
 
@@ -136,17 +153,7 @@ function AssistantMessage({ message, onCite, onAsk }) {
       ) : null}
 
       {message.followups?.length > 0 ? (
-        <div className="flex flex-col gap-1.5 mt-1">
-          {message.followups.map((question) => (
-            <button
-              key={question}
-              onClick={() => onAsk(question)}
-              className="self-start text-left text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-full px-3 py-1.5 active:bg-blue-100"
-            >
-              {question}
-            </button>
-          ))}
-        </div>
+        <QuestionChips questions={message.followups} onAsk={onAsk} className="mt-1" />
       ) : null}
     </div>
   )
@@ -385,7 +392,9 @@ export default function AdvisorPage() {
             ) : null}
             <div className="flex flex-col gap-2">
               <p className="text-xs font-semibold text-slate-500">이런 질문을 해보세요</p>
-              {(context ? CONTEXT_SUGGESTED_QUESTIONS : SUGGESTED_QUESTIONS).map((question) => (
+              {context ? (
+                <QuestionChips questions={CONTEXT_SUGGESTED_QUESTIONS} onAsk={ask} />
+              ) : SUGGESTED_QUESTIONS.map((question) => (
                 <button
                   key={question}
                   onClick={() => ask(question)}
