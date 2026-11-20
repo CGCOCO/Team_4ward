@@ -102,12 +102,12 @@ function SourceCard({ source, onOpen }) {
 // 꼬리 질문·분석 결과 추천 질문에 함께 쓰는 칩 형태 질문 버튼
 function QuestionChips({ questions, onAsk, className = '' }) {
   return (
-    <div className={`flex flex-col gap-1.5 ${className}`}>
+    <div className={`flex flex-col gap-2 ${className}`}>
       {questions.map((question) => (
         <button
           key={question}
           onClick={() => onAsk(question)}
-          className="self-start text-left text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-full px-3 py-1.5 active:bg-blue-100"
+          className="self-start text-left text-sm text-blue-700 bg-blue-50 border border-blue-100 rounded-full px-4 py-2 active:bg-blue-100"
         >
           {question}
         </button>
