@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-export const API_BASE_URL = 'http://localhost:8000'
+// 배포 시 frontend/.env 의 VITE_API_BASE_URL 로 지정 (없으면 로컬 백엔드)
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 export const TOKEN_KEY = 'safety_ai_access_token'
 
 export function getToken() {

@@ -5,12 +5,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.auth import router as auth_router
 from app.api.analyze import router as analysis_router
 from app.api.advisor import router as advisor_router
+from app.config import configure_logging, validate_settings
 from app.db import init_db
 from app.privacy.image_masker import initialize_yolo_models
+
+configure_logging()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validate_settings()
     init_db()
     initialize_yolo_models()
     yield

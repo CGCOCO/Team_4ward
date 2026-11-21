@@ -1,6 +1,7 @@
 import chromadb
 import vertexai
 import json
+import logging
 import re
 import sys
 from pathlib import Path
@@ -11,12 +12,21 @@ from google.genai import types
 from rank_bm25 import BM25Okapi
 from kiwipiepy import Kiwi
 
+from app.config import (
+    ANALYSIS_FINAL_MODEL,
+    ANALYSIS_MODEL,
+    GOOGLE_CLOUD_PROJECT,
+    VERTEX_LOCATION,
+)
+
 # =====================================================
 # CONFIG
 # =====================================================
 
-PROJECT_ID = "kun-kgp-mytnt831"
-LOCATION = "us-central1"
+PROJECT_ID = GOOGLE_CLOUD_PROJECT
+LOCATION = VERTEX_LOCATION
+
+logger = logging.getLogger(__name__)
 
 ACCIDENT_COLLECTION = "accident_case_full"
 
@@ -121,7 +131,7 @@ def analyze_image(image_path):
 
     response = vision_client.models.generate_content(
 
-        model="gemini-4-hydrogen",
+        model=ANALYSIS_MODEL,
 
         contents=[
 
@@ -182,7 +192,7 @@ def build_bm25_corpus():
     if accident_bm25 is not None:
         return
 
-    print("Loading BM25 corpus...")
+    logger.info("BM25 말뭉치 로딩")
 
     # ---------- Accident ----------
 
@@ -341,7 +351,7 @@ def rerank_accident_cases(
 
     response = vision_client.models.generate_content(
 
-        model="gemini-4-hydrogen",
+        model=ANALYSIS_MODEL,
 
         contents=[ 
             prompt,
@@ -382,8 +392,7 @@ def rerank_accident_cases(
 
     except Exception:
 
-        print("ACCIDENT RERANK ERROR")
-        print(response.text)
+        logger.warning("사고사례 재순위 응답 파싱 실패, BM25 순서 사용: %s", (response.text or "")[:500])
 
         return candidates[:top_k]
     
@@ -477,7 +486,7 @@ def rerank_law_cases(
 
     response = vision_client.models.generate_content(
 
-        model="gemini-4-hydrogen",
+        model=ANALYSIS_MODEL,
 
         contents=[ 
             prompt,
@@ -517,8 +526,7 @@ def rerank_law_cases(
 
     except Exception:
 
-        print("LAW RERANK ERROR")
-        print(response.text)
+        logger.warning("법령 재순위 응답 파싱 실패, BM25 순서 사용: %s", (response.text or "")[:500])
 
         return candidates[:top_k]
     
@@ -547,53 +555,16 @@ def rerank_law_cases(
 # PRINT
 # =====================================================
 
-def print_results(
-
-    title,
-    results,
-    is_law=False
-
-):
-
-    print("\n")
-    print("=" * 100)
-    print(title)
-    print("=" * 100)
-
-    for rank, item in enumerate(
-
-        results,
-
-        start=1
-
-    ):
-
+def log_results(title, results, is_law=False):
+    """검색 결과를 디버그 로그로 남긴다 (LOG_LEVEL=DEBUG 일 때만 출력)."""
+    if not logger.isEnabledFor(logging.DEBUG):
+        return
+    lines = [f"===== {title} ====="]
+    for rank, item in enumerate(results, start=1):
         meta = item["metadata"]
-
-        print("\n")
-        print("-" * 80)
-
-        print(
-            f"TOP {rank}"
-        )
-
-        if is_law:
-
-            print(
-                f"ARTICLE : {meta['article']}"
-            )
-
-        else:
-
-            print(
-                f"FILENAME : {meta['filename']}"
-            )
-
-        print()
-
-        print(
-            item["document"][:500]
-        )
+        label = f"ARTICLE : {meta['article']}" if is_law else f"FILENAME : {meta['filename']}"
+        lines.append(f"--- TOP {rank} | {label}\n{item['document'][:500]}")
+    logger.debug("\n".join(lines))
 
 
 def build_context(
@@ -736,7 +707,7 @@ TASK
 
     response = multimodal_client.models.generate_content(
 
-        model="gemini-4-carbon",
+        model=ANALYSIS_FINAL_MODEL,
 
         contents=[
             prompt,
@@ -784,18 +755,7 @@ def run_analysis(image_path, *, retrieval_trace=None):
         image_path
     )
 
-    print("\n")
-    print("=" * 100)
-    print("VISION OUTPUT")
-    print("=" * 100)
-
-    print(
-        json.dumps(
-            vision_output,
-            ensure_ascii=False,
-            indent=2
-        )
-    )
+    logger.debug("VISION OUTPUT\n%s", json.dumps(vision_output, ensure_ascii=False, indent=2))
 
     descriptions = "\n".join(
         vision_output["hazard_description"]
@@ -813,31 +773,8 @@ hazard_keywords:
 {keywords}
 """
 
-    print("\n")
-    print("=" * 100)
-    print("QUERY")
-    print("=" * 100)
-
-    print(query)
-
-    # bm25가 어떤 토큰을 사용하는지 확인하기
-    print("\n")
-    print("=" * 100)
-    print("BM25 TOKENS")
-    print("=" * 100)
-
-    print(
-        tokenize(query)
-    )
-
-    print("\n")
-    print("=" * 100)
-    print("TOKEN COUNT")
-    print("=" * 100)
-
-    print(
-        len(tokenize(query))
-    )
+    tokens = tokenize(query)
+    logger.debug("QUERY\n%s\nBM25 TOKENS (%d): %s", query, len(tokens), tokens)
 
     build_bm25_corpus()
 
@@ -849,11 +786,11 @@ hazard_keywords:
         acc_bm25,
     )
 
-    print_results(
+    log_results(
         "ACCIDENT - BM25",
         acc_bm25
     )
-    print_results(
+    log_results(
         "ACCIDENT - RERANK",
         acc_rerank
     )
@@ -870,13 +807,13 @@ hazard_keywords:
         retrieval_trace["candidates"] = [item["id"] for item in law_bm25]
         retrieval_trace["reranked"] = [item["id"] for item in law_rerank]
 
-    print_results(
+    log_results(
         "LAW - BM25",
         law_bm25,
         True
     )
 
-    print_results(
+    log_results(
         "LAW - RERANK",
         law_rerank,
         True
@@ -893,12 +830,7 @@ hazard_keywords:
         context
     )
 
-    print("\n")
-    print("=" * 100)
-    print("FINAL RESPONSE")
-    print("=" * 100)
-
-    print(final_response)
+    logger.debug("FINAL RESPONSE\n%s", final_response)
 
     return parse_final_response(
         final_response
@@ -906,8 +838,10 @@ hazard_keywords:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s [%(name)s] %(message)s")
+    logger.setLevel(logging.DEBUG)  # CLI 실행 시에는 중간 결과까지 출력
     if len(sys.argv) < 2:
-        raise SystemExit("Usage: python app/ai/scripts/main.py <image_path>")
+        raise SystemExit("Usage: python -m app.ai.scripts.main <image_path>  (프로젝트 루트에서 실행)")
 
     print(
         json.dumps(

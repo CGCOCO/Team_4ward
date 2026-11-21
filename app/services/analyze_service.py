@@ -1,6 +1,7 @@
 from pathlib import Path
 import asyncio
 import json
+import logging
 import tempfile
 
 from fastapi import HTTPException, UploadFile
@@ -9,6 +10,8 @@ from app.db import get_connection
 from app.privacy.image_masker import blur_sensitive_regions
 from app.services.storage_service import upload_analysis_image
 
+
+logger = logging.getLogger(__name__)
 
 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
 
@@ -77,9 +80,10 @@ async def analyze_image_service(image: UploadFile, current_user: dict) -> dict:
             detail=str(exc),
         ) from exc
     except RuntimeError as exc:
+        logger.exception("민감정보 블러 처리 실패")
         raise HTTPException(
             status_code=500,
-            detail=str(exc),
+            detail="이미지 처리 중 오류가 발생했습니다.",
         ) from exc
 
     # 6. AI 위험 분석 실행
@@ -100,9 +104,10 @@ async def analyze_image_service(image: UploadFile, current_user: dict) -> dict:
             temp_file_path,
         )
     except Exception as exc:
+        logger.exception("AI 위험 분석 실패")
         raise HTTPException(
             status_code=500,
-            detail=f"AI 분석 중 오류가 발생했습니다: {exc}",
+            detail="AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
         ) from exc
     finally:
         if temp_file_path is not None:

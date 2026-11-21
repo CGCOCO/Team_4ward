@@ -4,7 +4,6 @@ import argparse
 import hashlib
 import json
 import mimetypes
-import os
 import re
 import sys
 import tempfile
@@ -18,6 +17,7 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, TypeAdapter, field_validator
 
+from app.config import EVALUATION_MODEL, GOOGLE_CLOUD_PROJECT
 from app.rag.law_rag import get_article
 
 METHOD_VERSION = "photo-safety-eval-v1"
@@ -415,8 +415,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("manifest", type=Path)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--model", default=os.getenv("EVALUATION_MODEL", "gemini-4-neon"))
-    parser.add_argument("--project", default=os.getenv("GOOGLE_CLOUD_PROJECT", "kun-kgp-mytnt831"))
+    parser.add_argument("--model", default=EVALUATION_MODEL)
+    parser.add_argument("--project", default=GOOGLE_CLOUD_PROJECT)
     parser.add_argument("--generate-missing", action="store_true")
     parser.add_argument("--score", action="store_true", help="Add four 1–5 rubric ratings per photo")
     args = parser.parse_args()

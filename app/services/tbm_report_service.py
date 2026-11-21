@@ -12,6 +12,7 @@ AI 결과에 TBM 전용 필드(tbm_risks, key_risk 등)가 있으면 그것을 �
 
 from __future__ import annotations
 
+import logging
 import re
 from html import escape
 from io import BytesIO
@@ -37,6 +38,8 @@ from reportlab.platypus import (
 )
 
 from app.services.storage_service import download_analysis_image
+
+logger = logging.getLogger(__name__)
 
 
 # =====================================================
@@ -776,6 +779,7 @@ def _load_image(image_url: str | None) -> Image | None:
         image = Image(BytesIO(image_bytes))
     except Exception:
         # 이미지 저장소에 접근할 수 없어도 회의록은 생성한다.
+        logger.warning("TBM 회의록 이미지 로드 실패: %s", image_url, exc_info=True)
         return None
     ratio = image.imageHeight / image.imageWidth
     max_w, max_h = CONTENT_W - 20, IMAGE_BOX_H - 16
