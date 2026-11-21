@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
@@ -8,8 +9,11 @@ from fastapi import HTTPException
 from google.cloud import storage
 from google.api_core.exceptions import GoogleAPIError, NotFound
 
+from app.config import GCS_BUCKET_NAME
 
-GCS_BUCKET_NAME = "team-4ward-analysis-images"
+logger = logging.getLogger(__name__)
+
+
 
 
 def _get_storage_client() -> storage.Client:
@@ -51,9 +55,10 @@ def upload_analysis_image(
             content_type=content_type,
         )
     except GoogleAPIError as exc:
+        logger.exception("GCS 이미지 업로드 실패: %s", object_name)
         raise HTTPException(
             status_code=500,
-            detail=f"이미지 저장 중 오류가 발생했습니다: {exc}",
+            detail="이미지 저장 중 오류가 발생했습니다.",
         ) from exc
 
     return f"gs://{GCS_BUCKET_NAME}/{object_name}"
@@ -66,13 +71,15 @@ def download_analysis_image(gs_url: str) -> tuple[bytes, str]:
         blob = client.bucket(bucket_name).blob(object_name)
         image_bytes = blob.download_as_bytes()
     except ValueError as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        logger.exception("잘못된 이미지 경로: %s", gs_url)
+        raise HTTPException(status_code=500, detail="이미지 경로가 올바르지 않습니다.") from exc
     except NotFound as exc:
         raise HTTPException(status_code=404, detail="이미지를 찾을 수 없습니다.") from exc
     except GoogleAPIError as exc:
+        logger.exception("GCS 이미지 다운로드 실패: %s", gs_url)
         raise HTTPException(
             status_code=500,
-            detail=f"이미지를 불러오는 중 오류가 발생했습니다: {exc}",
+            detail="이미지를 불러오는 중 오류가 발생했습니다.",
         ) from exc
 
     content_type = blob.content_type or "application/octet-stream"

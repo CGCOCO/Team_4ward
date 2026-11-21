@@ -1,5 +1,5 @@
 import json
-import os
+import logging
 import re
 from collections.abc import Iterator
 from functools import lru_cache
@@ -9,12 +9,15 @@ from fastapi import HTTPException
 from google import genai
 from google.genai import types
 
+from app.config import ADVISOR_MODEL, GOOGLE_CLOUD_PROJECT
 from app.db import get_connection
 from app.rag.interface import LawArticle, get_rag
 
 
-PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "kun-kgp-mytnt831")
-MODEL = os.getenv("ADVISOR_MODEL", "gemini-4-hydrogen")
+logger = logging.getLogger(__name__)
+
+PROJECT_ID = GOOGLE_CLOUD_PROJECT
+MODEL = ADVISOR_MODEL
 TOP_K = 6
 HISTORY_TURNS = 6  # 질의 재작성·답변에 넘길 최근 메시지 수
 _CLIENT_LOCK = Lock()
@@ -239,6 +242,7 @@ def suggest_followups(question: str, answer: str) -> list[str]:
         items = json.loads(response.text or "[]")
         return [str(item) for item in items if item][:3]
     except Exception:
+        logger.warning("꼬리 질문 생성 실패", exc_info=True)
         return []
 
 
@@ -290,5 +294,6 @@ def stream_chat(
             "cited": cited,
             "followups": suggest_followups(message, answer),
         })
-    except Exception as exc:
-        yield _sse("error", {"message": "답변 생성 중 오류가 발생했습니다.", "detail": str(exc)[:300]})
+    except Exception:
+        logger.exception("AI 도우미 답변 생성 실패")
+        yield _sse("error", {"message": "답변 생성 중 오류가 발생했습니다."})

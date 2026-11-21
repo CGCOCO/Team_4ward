@@ -2,8 +2,8 @@
 AI 도우미 <-> 법령 RAG 인터페이스 (계약)
 
 RAG 담당은 아래 두 함수를 가진 모듈을 구현하고, 환경변수 RAG_BACKEND 로 선택한다.
-  - RAG_BACKEND=mock (기본값) : app.rag.mock_rag
-  - RAG_BACKEND=<모듈경로>     : 예) app.rag.law_rag
+  - RAG_BACKEND=app.rag.law_rag (기본값) : 실제 법령 DB
+  - RAG_BACKEND=mock                    : app.rag.mock_rag (샘플 조문, 테스트용)
 
 규칙
   - 필드명은 LawArticle 그대로 유지한다.
@@ -15,9 +15,10 @@ RAG 담당은 아래 두 함수를 가진 모듈을 구현하고, 환경변수 R
 """
 
 import importlib
-import os
 from functools import lru_cache
 from typing import Protocol, TypedDict
+
+from app.config import RAG_BACKEND
 
 
 class LawArticle(TypedDict):
@@ -38,6 +39,6 @@ class LawRAG(Protocol):
 
 @lru_cache(maxsize=1)
 def get_rag() -> LawRAG:
-    backend = os.getenv("RAG_BACKEND", "mock")
+    backend = RAG_BACKEND
     module_path = "app.rag.mock_rag" if backend == "mock" else backend
     return importlib.import_module(module_path)

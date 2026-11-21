@@ -2,16 +2,16 @@ import base64
 import hashlib
 import hmac
 import json
-import os
 import secrets
 import time
 from typing import Any
 
 from fastapi import HTTPException, status
 
+from app.config import get_secret_key
+
 
 TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
 
 
 def hash_password(password: str) -> str:
@@ -59,7 +59,7 @@ def create_access_token(user_id: int) -> str:
     }
     payload_part = _b64encode(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
     signature = hmac.new(
-        SECRET_KEY.encode("utf-8"),
+        get_secret_key().encode("utf-8"),
         payload_part.encode("ascii"),
         hashlib.sha256,
     ).digest()
@@ -73,7 +73,7 @@ def decode_access_token(token: str) -> dict[str, Any]:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
 
     expected_signature = hmac.new(
-        SECRET_KEY.encode("utf-8"),
+        get_secret_key().encode("utf-8"),
         payload_part.encode("ascii"),
         hashlib.sha256,
     ).digest()
